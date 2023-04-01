@@ -18,7 +18,7 @@ int base_col = 0, base_row = 0, matrixCtr = 0;
 
 GeMM g;
 
-#ifdef __AIESIM__
+#if defined(__AIESIM__) || defined(__X86SIM__)
 
    int main(void)
    {
