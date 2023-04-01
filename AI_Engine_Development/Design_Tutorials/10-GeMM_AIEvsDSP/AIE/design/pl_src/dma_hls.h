@@ -17,7 +17,7 @@
 #include <ap_int.h>
 #include <hls_stream.h>
 #include <ap_axi_sdata.h>
-
+extern "C" {
 ////////////////////////////////////////////////////////////
 // Top Function of Final Datamover unit for design without
 // ddr, it provides input matrix A and B and checks for the 
@@ -70,3 +70,4 @@ int dma_hls(
    hls::stream<qdma_axis<128, 0, 0, 0>> &strmInp_from_C7,
    ap_int<32> matSz_A, ap_int<32> matSz_B, ap_int<32> matSz_C
    );
+}

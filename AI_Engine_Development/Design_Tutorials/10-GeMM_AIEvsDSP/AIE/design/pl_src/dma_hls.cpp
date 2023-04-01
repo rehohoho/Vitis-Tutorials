@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "dma_hls.h"
-
+extern "C" {
 ////////////////////////////////////////////////////////////
 // Input to A...
 ////////////////////////////////////////////////////////////
@@ -342,4 +342,5 @@ int dma_hls(
          strmInp_from_C5, strmInp_from_C6, strmInp_from_C7, matSz_C, errCnt, goldenVal);
    
    return errCnt;
+}
 }
