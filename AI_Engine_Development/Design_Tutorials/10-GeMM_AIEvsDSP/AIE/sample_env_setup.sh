@@ -17,9 +17,9 @@
 # =======================================================
 # Set Platform ,Vitis and Versal Image repo
 # =======================================================
-export PLATFORM_REPO_PATHS= <YOUR-2022.2-PLATFORM-DIRECTORY>
-export XILINX_VITIS = <YOUR-2022.2-VITIS-DIRECTORY>/2022.2
-export COMMON_IMAGE_VERSAL=<YOUR-XILINX-VERSAL-COMMON-V2022.2-DIRECTORY>
+export PLATFORM_REPO_PATHS=/tools/Xilinx/Vitis/2022.2/base_platforms
+export XILINX_VITIS=/tools/Xilinx/Vitis/2022.2
+export COMMON_IMAGE_VERSAL=/tools/xilinx-versal-common-v2022.2
 # ====================================================
 # Source Versal Image ,Vitis and Aietools
 # ====================================================
@@ -29,7 +29,7 @@ source $XILINX_VITIS/settings64.sh
 # ========================================================
 # Set DSP Library for Vitis
 # ========================================================
-export DSPLIB_VITIS=<Path to Vitis Libs - Directory>
+export DSPLIB_VITIS=/tools/Xilinx/Vitis_Libraries
 # =========================================================
 # Platform Selection...
 # =========================================================
