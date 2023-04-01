@@ -91,6 +91,39 @@ WORK_DIR := Work
 <details>
 <summary>Build the Entire Design with a Single Command</summary>
 
+### Build for x86 simulation
+Ensure LD_LIBRARY_PATH includes x86 version of Xilinx. e.g. `/opt/xilinx/xrt/lib`.
+```bash
+make kernels TARGET=sw_emu 
+make graph TARGET=sw_emu
+make x86sim TARGET=sw_emu # logs at <buildDir/x86simulator_output>, generates emconfig too
+make xsa TARGET=sw_emu
+make application TARGET=sw_emu
+make package TARGET=sw_emu
+export XCL_EMULATION_MODE=sw_emu
+export XILINX_XRT=/opt/xilinx/xrt/
+export X86SIM_OPTIONSPATH=/home/ruien/workspace/Vitis-Tutorials/AI_Engine_Development/Design_Tutorials/10-GeMM_AIEvsDSP/AIE/build/gemm_32x32x32/x1/sw_emu/Work/options/x86sim.options #x86sim
+cd build/gemm_32x32x32/x1/sw_emu/
+./gemm_aie_xrt.elf a.xclbin
+
+make application TARGET=sw_emu SW_SIM=qemu
+make package TARGET=sw_emu SW_SIM=qemu
+cd build/gemm_32x32x32/x1/sw_emu/package
+./launch_sw_emu.sh -x86-sim-options /home/ruien/workspace/Vitis-Tutorials/AI_Engine_Development/Design_Tutorials/10-GeMM_AIEvsDSP/AIE/build/gemm_32x32x32/x1/sw_emu/Work/options/x86sim.options #QEMU
+export XILINX_XRT=/usr
+export XCL_EMULATION_MODE=sw_emu
+export LD_LIBRARY_PATH=/run/media/mmcblk0p1:/tmp:$LD_LIBRARY_PATH
+./gemm_aie_xrt.elf a.xclbin
+
+make kernels
+make graph
+make xsa
+make application
+make package
+export XILINX_XRT=/usr
+./gemm_aie_xrt.elf a.xclbin
+```
+
 ### Build the Entire Design with a Single Command
 
 If you are already familiar with the AI Engine and Vitis kernel compilation flows, you can build the entire design for each case of `gemm_$(MAT_DIMS)` with one command: 

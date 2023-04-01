@@ -109,8 +109,10 @@ DSPLIB_ROOT=$(DSPLIB_VITIS)/dsp
 # TARGET can be set as:
 #   hw_emu: Hardware Emulation
 #   hw    : Hardware Run
+#   sw_emu: Software Emulation
 # =========================================================
 TARGET := hw_emu
+SW_SIM := x86
 
 # =========================================================
 # Gemm Output matrix size can be set as:
@@ -220,6 +222,9 @@ XSA  := vck190_aie_gemm.$(TARGET).xsa
 # Kernel Source Files repository
 # =========================================================
 DATAMOVER_KERNEL_SRC := $(PL_SRC_REPO)/$(DATAMOVER_KERNEL_TOP).cpp
+ifeq ($(TARGET),sw_emu)
+  DATAMOVER_KERNEL_SRC += $(PL_SRC_REPO)/$(DATAMOVER_KERNEL_TOP).h
+endif
 
 # =========================================================
 # Graph Source files repository
@@ -248,7 +253,9 @@ AIE_FLAGS += --Xpreproc="-DITER_CNT=$(ITER_CNT)"
 AIE_FLAGS += --Xpreproc="-DGEMM_SIZE=$(GEMM_SIZE)"
 AIE_FLAGS += --Xpreproc="-DGEMM_INSTS=$(GEMM_INSTS)"
 AIE_FLAGS += --platform=$(PLATFORM)
-#AIE_FLAGS += --target=$(TARGET)
+ifeq ($(TARGET),sw_emu)
+  AIE_FLAGS += --target=x86sim
+endif
 
 AIE_FLAGS += --log-level=5
 #AIE_FLAGS += --test-iterations=2
@@ -277,17 +284,14 @@ AIE_SIM_FLAGS += -i=$(AIE_SIM_IO_DIR)
 # =========================================================
 GCC_FLAGS := -O
 GCC_FLAGS += -c
-GCC_FLAGS += -std=c++14
+GCC_FLAGS += -std=c++17
 GCC_FLAGS += -D__linux__
 GCC_FLAGS += -D__PS_ENABLE_AIE__
 GCC_FLAGS += -DXAIE_DEBUG
 GCC_FLAGS += -DGEMM_INSTS=$(GEMM_INSTS)
 GCC_FLAGS += -DGEMM_SIZE=$(GEMM_SIZE)
 
-GCC_INC_FLAGS := -I$(SDKTARGETSYSROOT)/usr/include/xrt
-GCC_INC_FLAGS += -I$(XILINX_VITIS)/aietools/include/
-GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include
-GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/lib
+GCC_INC_FLAGS := -I$(XILINX_VITIS)/aietools/include/
 GCC_INC_FLAGS += -I$(AIE_SRC_REPO)
 GCC_INC_FLAGS += -I$(HOST_APP_SRC)
 GCC_INC_FLAGS += -I$(DSPLIB_ROOT)/L1/include/aie
@@ -297,9 +301,23 @@ GCC_INC_FLAGS += -I$(DSPLIB_ROOT)/L1/tests/aie/src
 GCC_INC_FLAGS += -I$(DSPLIB_ROOT)/L2/include/aie
 GCC_INC_FLAGS += -I$(DSPLIB_ROOT)/L2/tests/aie/common/inc
 
-GCC_INC_LIB += -L$(SDKTARGETSYSROOT)/usr/lib
-GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/aarch64.o
-GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
+ifeq ($(TARGET),sw_emu)
+  ifeq ($(SW_SIM),x86)
+    CXX := g++
+    GCC_INC_FLAGS += -I/opt/xilinx/xrt/include
+
+    GCC_INC_LIB += -L/opt/xilinx/xrt/lib
+    GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
+  else
+    GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include/xrt
+    GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include
+    GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/lib
+
+    GCC_INC_LIB += -L$(SDKTARGETSYSROOT)/usr/lib
+    GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/aarch64.o
+    GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
+  endif
+endif
 
 GCC_LIB := -ladf_api_xrt
 GCC_LIB += -lxrt_coreutil
@@ -355,14 +373,21 @@ PKG_FLAGS := -t $(TARGET)
 PKG_FLAGS += --save-temps
 PKG_FLAGS += --temp_dir $(BUILD_TARGET_DIR)/_x
 PKG_FLAGS += -f $(PLATFORM)
-PKG_FLAGS += --package.rootfs $(COMMON_IMAGE_VERSAL)/rootfs.ext4
-PKG_FLAGS += --package.kernel_image $(COMMON_IMAGE_VERSAL)/Image
-PKG_FLAGS += --package.boot_mode=sd
-PKG_FLAGS += --package.out_dir $(EMBEDDED_PACKAGE_OUT)
-PKG_FLAGS += --package.image_format=ext4
-PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF) $(BUILD_TARGET_DIR)/$(XSA) $(LIBADF_A)
-PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF_INF_RUN) 
-PKG_FLAGS += --package.sd_file $(EXEC_SCRIPTS_REPO)/$(EMBEDDED_EXEC_SCRIPT)
+
+ifeq ($(TARGET),sw_emu)
+  ifeq ($(SW_SIM),x86)
+    PKG_FLAGS += --package.emu_ps x86
+  else
+    PKG_FLAGS += --package.rootfs $(COMMON_IMAGE_VERSAL)/rootfs.ext4
+    PKG_FLAGS += --package.kernel_image $(COMMON_IMAGE_VERSAL)/Image
+    PKG_FLAGS += --package.boot_mode=sd
+    PKG_FLAGS += --package.out_dir $(EMBEDDED_PACKAGE_OUT)
+    PKG_FLAGS += --package.image_format=ext4
+    PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF)
+    PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF_INF_RUN) 
+    PKG_FLAGS += --package.sd_file $(EXEC_SCRIPTS_REPO)/$(EMBEDDED_EXEC_SCRIPT)
+  endif
+endif
 
 ## If Profiling for Performance Measurement is enabled..
 ifeq ($(EN_TRACE),1)
@@ -379,6 +404,7 @@ ifdef XRT_ROOT
 endif
 
 PKG_FLAGS += --package.defer_aie_run
+PKG_FLAGS += $(BUILD_TARGET_DIR)/$(XSA) $(LIBADF_A)
 
 ###########################################################
 # Make rules...
@@ -443,6 +469,11 @@ create_ioFiles:
 	cd $(AIE_SIM_IO_BASE_DIR); \
 	python $(AIE_SIM_IO_BASE_DIR)/plioGen.py $(GEMM_SIZE) $(IO_INP_TYPE) $(ITER_CNT)
 	chmod 755 -R $(AIE_SIM_IO_DIR)
+
+x86sim: $(LIBADF_A)
+	cd $(BUILD_TARGET_DIR); \
+	x86simulator --i=$(AIE_SIM_IO_DIR) --pkg-dir=$(WORK_DIR) --dump; \
+  emconfigutil --platform $(PLATFORM) --nd 1
 
 aiesim: graph
 	cd $(BUILD_TARGET_DIR); \
