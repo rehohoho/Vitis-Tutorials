@@ -317,6 +317,14 @@ ifeq ($(TARGET),sw_emu)
     GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/aarch64.o
     GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
   endif
+else
+	GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include/xrt
+	GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include
+	GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/lib
+
+	GCC_INC_LIB += -L$(SDKTARGETSYSROOT)/usr/lib
+	GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/aarch64.o
+	GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
 endif
 
 GCC_LIB := -ladf_api_xrt
@@ -340,11 +348,8 @@ VPP_LINK_FLAGS += --clock.defaultTolerance 0.001
 
 ## If Profiling for Performance Measurement is enabled..
 ifeq ($(EN_TRACE),1)
-   ifeq ($(TARGET),hw)
-      VPP_LINK_FLAGS += --profile.data $(DATAMOVER_KERNEL_TOP):all:all
-      VPP_LINK_FLAGS += --profile.trace_memory DDR
-      
-   endif
+	VPP_LINK_FLAGS += --profile.data $(DATAMOVER_KERNEL_TOP):all:all
+	VPP_LINK_FLAGS += --profile.trace_memory DDR
 endif
 
 VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/x$(GEMM_INSTS).cfg
@@ -387,14 +392,20 @@ ifeq ($(TARGET),sw_emu)
     PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF_INF_RUN) 
     PKG_FLAGS += --package.sd_file $(EXEC_SCRIPTS_REPO)/$(EMBEDDED_EXEC_SCRIPT)
   endif
+else
+	PKG_FLAGS += --package.rootfs $(COMMON_IMAGE_VERSAL)/rootfs.ext4
+	PKG_FLAGS += --package.kernel_image $(COMMON_IMAGE_VERSAL)/Image
+	PKG_FLAGS += --package.boot_mode=sd
+	PKG_FLAGS += --package.out_dir $(EMBEDDED_PACKAGE_OUT)
+	PKG_FLAGS += --package.image_format=ext4
+	PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF)
+	PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF_INF_RUN) 
+	PKG_FLAGS += --package.sd_file $(EXEC_SCRIPTS_REPO)/$(EMBEDDED_EXEC_SCRIPT)
 endif
 
 ## If Profiling for Performance Measurement is enabled..
 ifeq ($(EN_TRACE),1)
-   ifeq ($(TARGET),hw)
-      PKG_FLAGS += --package.sd_file $(PROFILING_CONFIGS_REPO)/xrt.ini
-   
-   endif
+	PKG_FLAGS += --package.sd_file $(PROFILING_CONFIGS_REPO)/xrt.ini
 endif
 
 ## If XRT_ROOT is set...
