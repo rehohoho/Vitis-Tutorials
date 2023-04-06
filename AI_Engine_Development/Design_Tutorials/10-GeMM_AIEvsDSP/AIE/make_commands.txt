@@ -1,29 +1,31 @@
 # x86sim
-# aiecompiler --target=x86sim --verbose --log-level=5 --dataflow \
-  -include=design/aie_src \
+# aiecompiler \
+  -I=design/aie_src \
   -include=/tools/Xilinx/Vitis_Libraries/dsp/L1/include/aie \
   -include=/tools/Xilinx/Vitis_Libraries/dsp/L1/src/aie \
-  -include=/tools/Xilinx/Vitis_Libraries/dsp/L1/tests/aie/inc \
-  -include=/tools/Xilinx/Vitis_Libraries/dsp/L1/tests/aie/src \
   -include=/tools/Xilinx/Vitis_Libraries/dsp/L2/include/aie \
-  -include=/tools/Xilinx/Vitis_Libraries/dsp/L2/tests/aie/common/inc \
+  --verbose \
   --Xpreproc="-DITER_CNT=16" \
   --Xpreproc="-DGEMM_SIZE=32" \
   --Xpreproc="-DGEMM_INSTS=1" \
   --platform=/tools/Xilinx/Vitis/2022.2/base_platforms/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm \
+  --target=x86sim \
+  --log-level=5 \
   --pl-freq=312.5 \
+  --dataflow \
   --constraints=design/aie_src/constraints.aiecst \
   --Xmapper=BufferOptLevel9 \
   --Xrouter=DMAFIFOsInFreeBankOnly \
   --workdir=build/gemm_32x32x32/x1/sw_emu/Work \
   --output-archive=build/gemm_32x32x32/x1/sw_emu/libadf_x86.a \
-  design/aie_src/graph.cpp 2>&1 | tee -a build/gemm_32x32x32/x1/sw_emu/aiecompiler.log
+  design/aie_src/graph.cpp 2>&1 | tee -a build/gemm_32x32x32/x1/sw_emu/Work/aiecompiler.log
 
 # x86simulator --i=design/aie_src/aiesim_data/gemm_32x32x32_ioFiles/ --pkg-dir=build/gemm_32x32x32/x1/sw_emu/Work/ --dump
 
 # software emulation (x86)
 # v++ --target sw_emu \
-  --hls.clock 312500000:dma_hls -D GEMM_SIZE=32 \
+  --hls.clock 312500000:dma_hls \
+  -D GEMM_SIZE=32 \
   --platform /tools/Xilinx/Vitis/2022.2/base_platforms/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm \
   --save-temps \
   --temp_dir build/gemm_32x32x32/x1/sw_emu/_x \
@@ -31,7 +33,8 @@
   design/pl_src/dma_hls.cpp \
   design/pl_src/dma_hls.h \
   -o build/gemm_32x32x32/x1/sw_emu/dma_hls.sw_emu.xo
-# v++ -l -t sw_emu \
+
+v++ -l \
   --platform /tools/Xilinx/Vitis/2022.2/base_platforms/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm \
   --save-temps \
   --temp_dir build/gemm_32x32x32/x1/sw_emu/_x \
@@ -49,56 +52,83 @@
   --vivado.prop run.impl_1.{STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE}={AggressiveExplore} \
   --vivado.prop run.impl_1.{STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE}={Default} \
   --vivado.prop run.impl_1.{STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.IS_ENABLED}={false} \
+  -t sw_emu \
   -o build/gemm_32x32x32/x1/sw_emu/vck190_aie_gemm.sw_emu.xsa \
   build/gemm_32x32x32/x1/sw_emu/dma_hls.sw_emu.xo \
-  build/gemm_32x32x32/x1/sw_emu/libadf_x86.a
+  build/gemm_32x32x32/x1/sw_emu/libadf.a
+
 # emconfigutil \
   --platform /tools/Xilinx/Vitis/2022.2/base_platforms/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm \
   --nd 1 \
   --od build/gemm_32x32x32/x1/sw_emu/
-# v++ -p -t sw_emu \
+
+v++ -p \
+  -t sw_emu \
   --save-temps \
   --temp_dir build/gemm_32x32x32/x1/sw_emu/_x \
   -f /tools/Xilinx/Vitis/2022.2/base_platforms/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm \
   --package.emu_ps x86 \
   --package.defer_aie_run \
   build/gemm_32x32x32/x1/sw_emu/vck190_aie_gemm.sw_emu.xsa \
-  build/gemm_32x32x32/x1/sw_emu/libadf_x86.a \
+  build/gemm_32x32x32/x1/sw_emu/libadf_x86.a
   -o build/gemm_32x32x32/x1/sw_emu/a.xclbin 
+
 # g++ \
-  -Wall -c -std=c++17 -D__SYNCBO_ENABLE__ -D__PS_ENABLE_AIE__ -Wno-int-to-pointer-cast \
+  -O \
+  -c \
+  -std=c++17 \
+  -D__linux__ -D__PS_ENABLE_AIE__ -DXAIE_DEBUG \
   -DGEMM_INSTS=1 -DGEMM_SIZE=32 -DITER_CNT=16 \
-  -I/opt/xilinx/xrt/include \
   -I/tools/Xilinx/Vitis/2022.2/aietools/include/ \
-  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/include/aie \
-  -I/tools/Xilinx/Vitis_Libraries/dsp/L2/include/aie \
   -Idesign/aie_src \
   -Idesign/host_app_src \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/include/aie \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/src/aie \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/tests/aie/inc \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/tests/aie/src \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L2/include/aie \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L2/tests/aie/common/inc \
+  -I/opt/xilinx/xrt/include \
   build/gemm_32x32x32/x1/sw_emu/Work/ps/c_rts/aie_control_xrt.cpp \
   -o build/gemm_32x32x32/x1/sw_emu/app_control.o
+
 # g++ \
-  -Wall -c -std=c++17 -D__SYNCBO_ENABLE__ -D__PS_ENABLE_AIE__ -Wno-int-to-pointer-cast \
+  -O \
+  -c \
+  -std=c++17 \
+  -D__linux__ -D__PS_ENABLE_AIE__ -DXAIE_DEBUG \
   -DGEMM_INSTS=1 -DGEMM_SIZE=32 -DITER_CNT=16 \
-  -I/opt/xilinx/xrt/include \
   -I/tools/Xilinx/Vitis/2022.2/aietools/include/ \
-  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/include/aie \
-  -I/tools/Xilinx/Vitis_Libraries/dsp/L2/include/aie \
   -Idesign/aie_src \
   -Idesign/host_app_src \
-  design/host_app_src/gemm_aie_app.cpp \
-  -o build/gemm_32x32x32/x1/sw_emu/gemm_aie_app.o
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/include/aie \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/src/aie \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/tests/aie/inc \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L1/tests/aie/src \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L2/include/aie \
+  -I/tools/Xilinx/Vitis_Libraries/dsp/L2/tests/aie/common/inc \
+  -I/opt/xilinx/xrt/include design/host_app_src/gemm_aie_app.cpp \
+  -o build/gemm_32x32x32/x1/sw_emu/gemm_aie_app.o \
+  -L/opt/xilinx/xrt/lib \
+  -L/tools/Xilinx/Vitis/2022.2/aietools/lib/lnx64.o \
+  -ladf_api_xrt \
+  -lxrt_coreutil
+
 # g++ \
-  -I/opt/xilinx/xrt/include \
   build/gemm_32x32x32/x1/sw_emu/app_control.o \
   build/gemm_32x32x32/x1/sw_emu/gemm_aie_app.o \
   -L/opt/xilinx/xrt/lib \
   -L/tools/Xilinx/Vitis/2022.2/aietools/lib/lnx64.o \
-  -L/tools/xilinx-versal-common-v2022.2/sysroots/x86_64-petalinux-linux/lib \
-  -ladf_api_xrt -lxrt_coreutil -pthread \
+  -ladf_api_xrt \
+  -lxrt_coreutil \
   -o build/gemm_32x32x32/x1/sw_emu/gemm_aie_xrt.elf
-# export XCL_EMULATION_MODE=sw_emu;export XILINX_XRT=/opt/xilinx/xrt/;export X86SIM_OPTIONSPATH=/home/ruien/workspace/Vitis-Tutorials/AI_Engine_Development/Design_Tutorials/10-GeMM_AIEvsDSP/AIE/build/gemm_32x32x32/x1/sw_emu/Work/options/x86sim.options #x86sim
+
+# export XCL_EMULATION_MODE=sw_emu
+# export XILINX_XRT=/opt/xilinx/xrt/
+# export X86SIM_OPTIONSPATH=build/gemm_32x32x32/x1/sw_emu/Work/options/x86sim.options #x86sim
 # cd build/gemm_32x32x32/x1/sw_emu/
 # ./gemm_aie_xrt.elf a.xclbin
+
 
 # software emulation (qemu)
 # v++ -p -t sw_emu \
