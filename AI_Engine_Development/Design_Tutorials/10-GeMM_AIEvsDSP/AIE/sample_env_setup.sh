@@ -20,6 +20,7 @@
 export PLATFORM_REPO_PATHS=/tools/Xilinx/Vitis/2022.2/base_platforms
 export XILINX_VITIS=/tools/Xilinx/Vitis/2022.2
 export COMMON_IMAGE_VERSAL=/tools/xilinx-versal-common-v2022.2
+export XILINX_X86_XRT=/opt/xilinx/xrt
 # ====================================================
 # Source Versal Image ,Vitis and Aietools
 # ====================================================
@@ -51,8 +52,9 @@ echo ""
 echo "Vitis HLS:"
 which vitis_hls
 echo ""
-echo ""
 echo "DSPLIBS"
 echo "$DSPLIB_VITIS"
 echo ""
-
+echo "X86 XRT"
+echo "$XILINX_X86_XRT"
+echo ""

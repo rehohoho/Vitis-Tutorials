@@ -301,13 +301,17 @@ GCC_INC_FLAGS += -I$(DSPLIB_ROOT)/L1/tests/aie/src
 GCC_INC_FLAGS += -I$(DSPLIB_ROOT)/L2/include/aie
 GCC_INC_FLAGS += -I$(DSPLIB_ROOT)/L2/tests/aie/common/inc
 
+GCC_LIB := -ladf_api_xrt
+GCC_LIB += -lxrt_coreutil
+
 ifeq ($(TARGET),sw_emu)
   ifeq ($(SW_SIM),x86)
     CXX := g++
-    GCC_INC_FLAGS += -I/opt/xilinx/xrt/include
+    GCC_INC_FLAGS += -I${XILINX_X86_XRT}/include
 
-    GCC_INC_LIB += -L/opt/xilinx/xrt/lib
+    GCC_INC_LIB += -L${XILINX_X86_XRT}/lib
     GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
+		GCC_LIB += -pthread
   else
     GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include/xrt
     GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include
@@ -327,9 +331,6 @@ else
 	GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
 endif
 
-GCC_LIB := -ladf_api_xrt
-GCC_LIB += -lxrt_coreutil
-
 # =========================================================
 # Kernel Compiler and Linker Flags
 # ========================================================
@@ -347,8 +348,13 @@ VPP_LINK_FLAGS := --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0
 VPP_LINK_FLAGS += --clock.defaultTolerance 0.001
 
 ## If Profiling for Performance Measurement is enabled..
+#VPP_LINK_FLAGS += --profile.data $(DATAMOVER_KERNEL_TOP):all:all
 ifeq ($(EN_TRACE),1)
-	VPP_LINK_FLAGS += --profile.data $(DATAMOVER_KERNEL_TOP):all:all
+	VPP_LINK_FLAGS += --profile.data all:all:all
+	VPP_LINK_FLAGS += --profile.memory all
+	VPP_LINK_FLAGS += --profile.stall all:all
+	VPP_LINK_FLAGS += --profile.exec all:all
+	VPP_LINK_FLAGS += --profile.aie all
 	VPP_LINK_FLAGS += --profile.trace_memory DDR
 endif
 
