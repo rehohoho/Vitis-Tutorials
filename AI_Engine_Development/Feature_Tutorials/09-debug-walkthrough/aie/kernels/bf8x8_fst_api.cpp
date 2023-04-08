@@ -21,6 +21,8 @@
 #include "aie_api/utils.hpp"
 #include "aie_api/aie_adf.hpp"
 
+#include <adf/x86sim/x86simDebug.h>
+
 // O0=x0 *C0+x8 *C1 + x16*C2+x24*C3 + x32*C4+x40*C5 + x48*C6+x56*C7;
 // O1=x1 *C0+x9 *C1 + x17*C2+x25*C3 + x33*C4+x41*C5 + x49*C6+x57*C7;
 // O2=x2 *C0+x10*C1 + x18*C2+x26*C3 + ...;
@@ -32,6 +34,9 @@
 
 void bf8x8_fst_api(input_window<cint16> * restrict c_input, input_window<cint16> * restrict x_input, output_stream_cacc48 * restrict cascadeout)
 {
+#if defined(__AIESIM__) || defined(__X86SIM__)
+    printf("%s: %s, %d: started \n", __FILE__, X86SIM_KERNEL_NAME, __LINE__);
+#endif
     // Loop Through the PRBs
     for (unsigned prbcnt=0; prbcnt<NUM_PRBS; ++prbcnt)
         chess_prepare_for_pipelining
@@ -48,6 +53,13 @@ void bf8x8_fst_api(input_window<cint16> * restrict c_input, input_window<cint16>
             aie::vector<cint16, 8> bufa1 = window_readincr_v8(c_input); 
             aie::vector<cint16, 8> bufb0;
             aie::vector<cint16, 8> bufb1;
+
+#if defined(__AIESIM__) || defined(__X86SIM__)
+            int16_t* print_ptr = (int16_t*)&bufa0;
+            if (i==0)
+                for (int pp=0; pp < 8; pp++)
+                    printf("%s: %s, %d: vector %d real:%d image:%d\n", __FILE__, X86SIM_KERNEL_NAME, __LINE__, pp, print_ptr[pp*2], print_ptr[pp*2+1]);
+#endif
 
             // read in 8 input data
             aie::vector<cint16, 8 > dat0 = window_readincr_v8(x_input);
@@ -70,6 +82,9 @@ void bf8x8_fst_api(input_window<cint16> * restrict c_input, input_window<cint16>
         // move the coefficient pointer to next PRB.
         window_incr(c_input, 8*8);
     }
+#if defined(__AIESIM__) || defined(__X86SIM__)
+    printf("%s: %s, %d: ended \n", __FILE__, X86SIM_KERNEL_NAME, __LINE__);
+#endif
 }
 
 #endif //INLINE
