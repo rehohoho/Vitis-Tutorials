@@ -59,7 +59,7 @@ After the previously listed steps are completed, you should have AI Engine, PS, 
 
 ### Step 3.1: Configure AI Engine sub-project
 1. Configure top level graph.
-![alt text](images/po_graph.png">
+![alt text](images/po_graph.png)
 
 2. Configure include paths.
 ![alt text](images/po_aie_c_config.png)
@@ -67,21 +67,21 @@ After the previously listed steps are completed, you should have AI Engine, PS, 
 
 ### Step 3.2: Configure hardware link
 1. Configure the hardware link with the `v++` option
-![alt text](images/po_hw_config.png">
+![alt text](images/po_hw_config.png)
 ![alt text](images/po_hw_config1.png)
 
 2. Import the `system.cfg` file to the correct project/location.
-![alt text](images/po_hw_config2.png">
+![alt text](images/po_hw_config2.png)
 
 ### Step 3.3: Configure hardware kernels
 1. Add hardware functions to project.
-![alt text](images/po_hw_config3.png">
+![alt text](images/po_hw_config3.png)
 
 2. Configure number of instances for each PL kernel.
-![alt text](images/po_hw_config4.png">
+![alt text](images/po_hw_config4.png)
 
 3. Update (comment out) `nk=kernel:1:kernel_n` line from the `system.cfg` file. This is because the Vitis IDE relies on the previous step to determine the number of instances for each PL kernel. Redundant configurations of the number of kernels in `system.cfg` results in compilation errors.
-![alt text](images/po_hw_config5.png">
+![alt text](images/po_hw_config5.png)
 
 ### Step 3.4: Configure PS sub-project
 1. Right-click the PS sub-project.
@@ -95,7 +95,7 @@ After the previously listed steps are completed, you should have AI Engine, PS, 
 
 ## Step 4: Configure system project in packaging options
 
-![alt text](images/po_system_config.png">
+![alt text](images/po_system_config.png)
 
 **Note:** This configuration is optional and depends on the design.
 
