@@ -15,8 +15,9 @@ TARGET   = sw_emu
 PLATFORM ?= ${PLATFORM_REPO_PATHS}/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm
 XSA      = bf_${TARGET}.xsa
 HOST_EXE = host.exe
-ROOTFS   = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2022.2/rootfs.ext4 
-IMAGE    = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2022.2/Image 
+ROOTFS   = /tools/xilinx-versal-common-v2022.2/rootfs.ext4 
+IMAGE    = /tools/xilinx-versal-common-v2022.2/Image
+SW_SIM   = x86
 
 GRAPH    = aie/graph.cpp
 LIBADF   = libadf.a
@@ -56,7 +57,7 @@ ${XOS}:
 
 host: guard-CXX guard-SDKTARGETSYSROOT ${HOST_EXE}
 ${HOST_EXE}: sw/*.cpp
-	make -C sw/
+	make -C sw/ SW_SIM=${SW_SIM}
 
 ###
 # Guarding Checks. Do not modify.
@@ -90,6 +91,11 @@ data:
 
 package: guard-ROOTFS guard-IMAGE guard-PLATFORM_REPO_PATHS package_${TARGET}
 package_${TARGET}: ${LIBADF} ${XSA} ${HOST_EXE} data 
+ifeq ($(SW_SIM),x86)
+	${VCC} -p -t ${TARGET} -f ${PLATFORM} ${XSA} ${LIBADF} \
+		--package.defer_aie_run \
+		--package.emu_ps x86
+else
 	${VCC} -p -t ${TARGET} -f ${PLATFORM} ${XSA} ${LIBADF} \
 		--package.rootfs ${ROOTFS} \
 		--package.kernel_image ${IMAGE} \
@@ -98,7 +104,9 @@ package_${TARGET}: ${LIBADF} ${XSA} ${HOST_EXE} data
 		--package.defer_aie_run \
 		--package.sd_dir data \
 		--package.sd_file embedded_exec.sh \
-		--package.sd_file ${HOST_EXE}
+		--package.sd_file ${HOST_EXE} \
+		--package.out_dir package
+endif
 
 package_dbg: guard-ROOTFS guard-IMAGE guard-PLATFORM_REPO_PATHS package_dbg_${TARGET}
 package_dbg_${TARGET}: ${LIBADF} ${XSA} ${HOST_EXE} data 

@@ -11,14 +11,30 @@
 # limitations under the License.
 #
 
+TARGET			 = hw_emu
 HOST_EXE     = ../host.exe
 HOST_INC     = -I../ -I../aie
 HOST_OBJ     = aie_control_xrt.o host.o
 AIE_CTRL_CPP = ../Work/ps/c_rts/aie_control_xrt.cpp
+SW_SIM			 = x86
 
-CXXFLAGS += -std=c++17 -I$(XILINX_VIVADO)/include/ -I${SDKTARGETSYSROOT}/usr/include/xrt/ -I../aie/inc -I../aie/kernels -O0 -g -Wall -c -fmessage-length=0 --sysroot=${SDKTARGETSYSROOT} -I${XILINX_VITIS}/aietools/include ${HOST_INC}
+CXXFLAGS += -std=c++17 -D__SYNCBO_ENABLE__ -I$(XILINX_VIVADO)/include/ -I../aie/inc -I../aie/kernels -O0 -g -Wall -c -fmessage-length=0 -I${XILINX_VITIS}/aietools/include ${HOST_INC}
 
-LDFLAGS += -ladf_api_xrt -lxrt_coreutil -lxrt_core -lxaiengine -lgcc -lc -lxilinxopencl -lpthread -lrt -ldl -lcrypt -lstdc++ --sysroot=${SDKTARGETSYSROOT} -L${SDKTARGETSYSROOT}/usr/lib/ -L$(XILINX_VITIS)/aietools/lib/aarch64.o
+LDFLAGS += -ladf_api_xrt -lxrt_coreutil -lxaiengine -lgcc -lc -lxilinxopencl -lpthread -lrt -ldl -lcrypt -lstdc++ 
+
+ifeq ($(TARGET),sw_emu)
+	ifeq ($(SW_SIM),x86)
+		CXX := g++
+		CXXFLAGS += -I${XILINX_X86_XRT}/include
+		LDFLAGS += -L${XILINX_X86_XRT}/lib -L$(XILINX_VITIS)/aietools/lib/lnx64.o
+	else
+		CXXFLAGS += -I${SDKTARGETSYSROOT}/usr/include/xrt/ --sysroot=${SDKTARGETSYSROOT}
+		LDFLAGS += --sysroot=${SDKTARGETSYSROOT} -L${SDKTARGETSYSROOT}/usr/lib/ -L$(XILINX_VITIS)/aietools/lib/aarch64.o
+	endif
+else
+	CXXFLAGS += -I${SDKTARGETSYSROOT}/usr/include/xrt/ --sysroot=${SDKTARGETSYSROOT}
+	LDFLAGS += --sysroot=${SDKTARGETSYSROOT} -L${SDKTARGETSYSROOT}/usr/lib/ -L$(XILINX_VITIS)/aietools/lib/aarch64.o
+endif
 
 .PHONY: clean
 
