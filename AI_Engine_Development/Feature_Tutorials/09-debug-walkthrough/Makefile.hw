@@ -15,14 +15,15 @@ TARGET   = hw
 PLATFORM ?= ${PLATFORM_REPO_PATHS}/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm
 XSA      = bf_${TARGET}.xsa
 HOST_EXE = host.exe
-ROOTFS   = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2022.2/rootfs.ext4 
-IMAGE    = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2022.2/Image 
+ROOTFS   = /tools/xilinx-versal-common-v2022.2/rootfs.ext4 
+IMAGE    = /tools/xilinx-versal-common-v2022.2/Image 
 
 GRAPH    = aie/graph.cpp
 LIBADF   = libadf.a
 
 AIE_CMPL_CMD = aiecompiler -log-level=5 -v -platform=${PLATFORM} --pl-freq=500 -genArchive -include="./aie" -include="./aie/inc" -include="./aie/kernels" -include="./data" -include="./" --xlopt=0 --num-trace-streams=8 --event-trace=runtime --event-trace-port=plio --broadcast-enable-core=true -workdir=./Work ${GRAPH}
 AIE_SIM_CMD = aiesimulator --pkg-dir=./Work
+EMU_CMD  = cd package;./launch_hw_emu.sh -timeout 18000
 
 ##########################################################################################################################################################
 ### DO NOT MODIFY BELOW THIS LINE UNLESS NECESSARY
@@ -38,6 +39,8 @@ VPP_FLAGS=--save-temps --verbose --config ${VPP_SPEC}
 .PHONY: clean
 
 all: xsa host package data
+run: all run_hw_emu
+sd_card: all
 
 aie: ${LIBADF}
 ${LIBADF}: ${GRAPH}
@@ -72,7 +75,7 @@ __check_defined = \
 		$(error Undefined $1$(if $2, ($2))))
 
 guard-PLATFORM_REPO_PATHS:
-	$(call check_defined, PLATFORM_REPO_PATHS, Set to location of xilinx_vck190_base_202210_1 platform)
+	$(call check_defined, PLATFORM_REPO_PATHS, Set to location of xilinx_vck190_base_202220_1 platform)
 
 guard-ROOTFS:
 	$(call check_defined, ROOTFS, Set to location of xilinx-versal-common-v2022.2/rootfs.ext4)
@@ -113,11 +116,12 @@ package_dbg_${TARGET}: ${LIBADF} ${XSA} ${HOST_EXE} data
 		--package.enable_aie_debug \
 		--package.sd_dir data \
 		--package.sd_file embedded_exec.sh \
-		--package.sd_file ${HOST_EXE}
+		--package.sd_file ${HOST_EXE} \
+		--package.out_dir package
 
 run_hw_emu: launch_hw_emu.sh
 launch_hw_emu.sh: package_hw_emu
-	./launch_hw_emu.sh
+	$(EMU_CMD)
 
 clean:
 	rm -rf _x v++_* ${XOS} ${OS} ${LIBADF} *.o.* *.o *.xpe *.xo.* \

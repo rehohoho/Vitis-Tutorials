@@ -21,8 +21,11 @@ SW_SIM   = x86
 
 GRAPH    = aie/graph.cpp
 LIBADF   = libadf.a
+
 AIE_CMPL_CMD = aiecompiler -target=x86sim -Xpreproc=-O0 -log-level=5 -v -platform=${PLATFORM} --pl-freq=500 -genArchive -include="./aie" -include="./aie/inc" -include="./aie/kernels" -include="./data" -include="./" --xlopt=0 -workdir=./Work ${GRAPH}
 X86_SIM_CMD = x86simulator --pkg-dir=./Work --dump --trace
+EMU_CMD  = cd package;./launch_sw_emu.sh -timeout 18000
+
 
 ##########################################################################################################################################################
 ### DO NOT MODIFY BELOW THIS LINE UNLESS NECESSARY
@@ -56,6 +59,7 @@ ${XOS}:
 	make -C pl_kernels/
 
 host: guard-CXX guard-SDKTARGETSYSROOT ${HOST_EXE}
+
 ${HOST_EXE}: sw/*.cpp
 	make -C sw/ SW_SIM=${SW_SIM}
 
@@ -71,7 +75,7 @@ __check_defined = \
 		$(error Undefined $1$(if $2, ($2))))
 
 guard-PLATFORM_REPO_PATHS:
-	$(call check_defined, PLATFORM_REPO_PATHS, Set to location of xilinx_vck190_base_202210_1 platform)
+	$(call check_defined, PLATFORM_REPO_PATHS, Set to location of xilinx_vck190_base_202220_1 platform)
 
 guard-ROOTFS:
 	$(call check_defined, ROOTFS, Set to location of xilinx-versal-common-v2022.2/rootfs.ext4)
@@ -118,11 +122,13 @@ package_dbg_${TARGET}: ${LIBADF} ${XSA} ${HOST_EXE} data
 		--package.defer_aie_run \
 		--package.enable_aie_debug \
 		--package.sd_dir data \
-		--package.sd_file ${HOST_EXE}
+		--package.sd_file embedded_exec.sh \
+		--package.sd_file ${HOST_EXE} \
+		--package.out_dir package
 
 run_sw_emu: launch_sw_emu.sh
 launch_sw_emu.sh: package_sw_emu
-	./launch_sw_emu.sh
+	$(EMU_CMD)
 
 clean:
 	rm -rf _x v++_* ${XOS} ${OS} ${LIBADF} *.o.* *.o *.xpe *.xo.* \
