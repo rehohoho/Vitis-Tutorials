@@ -129,7 +129,7 @@ After issuing the above command, expect to see result from [Step 3 Expected Resu
 
 ### Step 3 Expected Result with Vitis_Analyzer
 The Vitis™ Analyzer GUI is launched, select **Profile Summary** then **AI Engine & Memory** or **Interface Channels**.
-![alt text](images/pr_hw_perf_va.png">
+![alt text](images/pr_hw_perf_va.png)
 
 ### Step 4 Open Multiple Profiling Runs with Vitis Analyzer
 You can run the application as many times as you would like with your preferences. However, some of these metrics' sets are interconnected because some use group events and others use individual events. For example, the heat_map metric set contains a metric that groups all kinds of stall events in a single metric along with other metrics that group data transfer events (load/store, streams, cascade, etc.) and vector instructions. To get a better view of which stall type(s) are prevalent, re-run with the stalls metric set. To better understand execution, re-run with the execution metric set.

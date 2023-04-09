@@ -35,10 +35,10 @@ It takes over 60 minutes to complete the build.
 
 ### Step 3 During Debug
 #### Step 3.1 Debug - PS
-![alt text](images/he_run_ps.png">
+![alt text](images/he_run_ps.png)
 
 #### Step 3.2 Debug - AI Engine
-![alt text](images/he_run_aie.png">
+![alt text](images/he_run_aie.png)
 
 AI Engine only debugs within system project via hardware emulator, AI Engine emulator debug still applies. <a href="Debug2_ai.md">AI Engine debug with AIE emulator</a> are applicable at this condition.
 
@@ -91,7 +91,7 @@ Command option explanation:
 9. `-s tcp::${xrt_server_port}`: Defines the agent listening protocol and port. it is 4352 in example, but can be any free port.
 
 Expected result
-![alt text](images/he_temp_run.png">
+![alt text](images/he_temp_run.png)
 
 **Note:** The previously listed step takes a couple of minutes to complete.
 
@@ -133,7 +133,7 @@ Expected result
 3. It takes some time depends on number of times in design to launch AI Engine debugger completely. Beamformer design contains 64 tiles that needs several minutes to complete.
 
 ### Step 5 Expected Vitis IDE
-![alt text](images/he_cl_run.png">
+![alt text](images/he_cl_run.png)
 
 ### Step 6 Clean up Launched Processes
 ```bash

@@ -43,7 +43,7 @@ Create debug target connection from Vitis™ IDE.
 * Plug-in sd_card into SD card slot and power up the board.
 * After board boots up, click on **Debug** to launch debugger.
 
-![alt text](images/hw_ta_sd.png">
+![alt text](images/hw_ta_sd.png)
 
 **Note:** The `sd_card.img` at `Hardware/package/sd_card.img` is the file for regular use. `sd_card.img` at `Hardware/package_aie_debug` is for debug run on board.
 
@@ -54,7 +54,7 @@ Launch PS application with `xclbin` (or PS application expected variables), so i
 
 After PS application is running and waiting to be debugged, launch Vitis IDE debugger.
 
-![alt text](images/hw_ta_run.png">
+![alt text](images/hw_ta_run.png)
 
 The Debugger launches, where you can expect to see AI Engine cores, and 
 - the source code window that allows debug (step-into, step-through, step-return)
@@ -63,7 +63,7 @@ The Debugger launches, where you can expect to see AI Engine cores, and
 - the register view 
 The application is ready to be debugged.
 
-![alt text](images/hw_ta_run1.png">
+![alt text](images/hw_ta_run1.png)
 
 From Vitis IDE, the application is being debugged during run time.
 
@@ -121,7 +121,7 @@ vitis -debug -h
 ```
 
 ### Step 3. Expected result
-![alt text](images/aie_cl_run.png">
+![alt text](images/aie_cl_run.png)
 -->
 
 ## Limitations of Source Code Debug on Hardware
