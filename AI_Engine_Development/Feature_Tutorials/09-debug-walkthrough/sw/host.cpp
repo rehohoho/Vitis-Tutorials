@@ -28,9 +28,9 @@ limitations under the License.
 #include "xrt/experimental/xrt_bo.h"
 #endif
 
-#define CIN_LEN 25600
-#define DIN_LEN 38400
-#define OUT_LEN 38400
+#define CIN_LEN 256 * ITER_CNT
+#define DIN_LEN 384 * ITER_CNT
+#define OUT_LEN 384 * ITER_CNT
 
 const int cin_size_in_bytes=CIN_LEN*8*8;
 const int dlbf_din_size_in_bytes=DIN_LEN*8*4;
@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
     //Run graph
     std::cout<<"Starting graph run"<<std::endl;
     Timer timer;
-    dut.run(100);
+    dut.run(ITER_CNT);
     dut.wait();
 
     double timer_stop=timer.stop();

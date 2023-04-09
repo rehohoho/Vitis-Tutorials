@@ -22,9 +22,9 @@
 #define UL_OUTPUT_BA (8)
 
 // for performance calculation
-#define CIN_LEN 25600
-#define DIN_LEN 38400
-#define OUT_LEN 38400
+#define CIN_LEN 256 * ITER_CNT
+#define DIN_LEN 384 * ITER_CNT
+#define OUT_LEN 384 * ITER_CNT
 
 TEST_BF<COL_OFFSET> dut;
 
@@ -36,7 +36,7 @@ int main(void) {
     event::handle handle0 = event::start_profiling(dut.dldin[0], event::io_stream_start_to_bytes_transferred_cycles, DIN_LEN*sizeof(cint16)*2);
     event::handle handle1 = event::start_profiling(dut.ulout[0], event::io_stream_start_to_bytes_transferred_cycles, OUT_LEN*sizeof(cint16)*2);
 
-    dut.run(100) ;
+    dut.run(ITER_CNT) ;
     dut.end() ;
 
     long long cycle_count0, cycle_count1 = 0;

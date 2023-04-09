@@ -18,7 +18,7 @@ HOST_OBJ     = aie_control_xrt.o host.o
 AIE_CTRL_CPP = ../Work/ps/c_rts/aie_control_xrt.cpp
 SW_SIM			 = x86
 
-CXXFLAGS += -std=c++17 -D__SYNCBO_ENABLE__ -I$(XILINX_VIVADO)/include/ -I../aie/inc -I../aie/kernels -O0 -g -Wall -c -fmessage-length=0 -I${XILINX_VITIS}/aietools/include ${HOST_INC}
+CXXFLAGS += -std=c++17 -D__SYNCBO_ENABLE__ -DITER_CNT=10 -I$(XILINX_VIVADO)/include/ -I../aie/inc -I../aie/kernels -O0 -g -Wall -c -fmessage-length=0 -I${XILINX_VITIS}/aietools/include ${HOST_INC}
 
 LDFLAGS += -ladf_api_xrt -lxrt_coreutil -lxaiengine -lgcc -lc -lxilinxopencl -lpthread -lrt -ldl -lcrypt -lstdc++ 
 

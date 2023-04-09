@@ -24,9 +24,9 @@ limitations under the License.
 #include "adf/adf_api/XRTConfig.h"
 #include "xrt/xrt_kernel.h"
 
-#define CIN_LEN 25600
-#define DIN_LEN 38400
-#define OUT_LEN 38400
+#define CIN_LEN 256 * ITER_CNT
+#define DIN_LEN 384 * ITER_CNT
+#define OUT_LEN 384 * ITER_CNT
 
 #define CLOCK_FREQ 1.0  // HW configuration
 
@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
     //Run graph
     std::cout<<"Starting graph run"<<std::endl;
 
-    dut.run(100);
+    dut.run(ITER_CNT);
     dut.wait();
 
     long long cycle_count0, cycle_count1 = 0;

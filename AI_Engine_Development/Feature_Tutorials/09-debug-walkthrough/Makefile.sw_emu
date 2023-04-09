@@ -22,7 +22,7 @@ SW_SIM   = x86
 GRAPH    = aie/graph.cpp
 LIBADF   = libadf.a
 
-AIE_CMPL_CMD = aiecompiler -target=x86sim -Xpreproc=-O0 -log-level=5 -v -platform=${PLATFORM} --pl-freq=500 -genArchive -include="./aie" -include="./aie/inc" -include="./aie/kernels" -include="./data" -include="./" --xlopt=0 -workdir=./Work ${GRAPH}
+AIE_CMPL_CMD = aiecompiler -target=x86sim -Xpreproc=-O0 -log-level=5 -v -platform=${PLATFORM} --pl-freq=500 -genArchive -include="./aie" -include="./aie/inc" -include="./aie/kernels" -include="./data" -include="./" --Xpreproc="-DITER_CNT=10" --xlopt=0 -workdir=./Work ${GRAPH}
 X86_SIM_CMD = x86simulator --pkg-dir=./Work --dump --trace
 EMU_CMD  = cd package;./launch_sw_emu.sh -timeout 18000
 

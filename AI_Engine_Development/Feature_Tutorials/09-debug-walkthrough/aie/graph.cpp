@@ -26,7 +26,7 @@ TEST_BF<COL_OFFSET> dut;
 #if defined  (__AIESIM__) || defined(__X86SIM__)
 int main(void) {
     dut.init();
-    dut.run(100) ;
+    dut.run(ITER_CNT);
     dut.end() ;
     return 0 ;
 }

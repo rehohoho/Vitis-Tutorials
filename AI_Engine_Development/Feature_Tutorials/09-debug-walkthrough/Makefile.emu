@@ -21,8 +21,8 @@ IMAGE    = /tools/xilinx-versal-common-v2022.2/Image
 GRAPH    = aie/graph.cpp
 LIBADF   = libadf.a
 
-AIE_CMPL_CMD = aiecompiler -log-level=5 -v -platform=${PLATFORM} --pl-freq=500 -genArchive -include="./aie" -include="./aie/inc" -include="./aie/kernels" -include="./data" -include="./" --xlopt=0 -workdir=./Work ${GRAPH}
-AIE_SIM_CMD = aiesimulator --pkg-dir=./Work --profile
+AIE_CMPL_CMD = aiecompiler -log-level=5 -v -platform=${PLATFORM} --pl-freq=500 -genArchive -include="./aie" -include="./aie/inc" -include="./aie/kernels" -include="./data" -include="./" --Xpreproc="-DITER_CNT=10" --xlopt=0 -workdir=./Work ${GRAPH}
+AIE_SIM_CMD = aiesimulator --pkg-dir=./Work # --profile --dump-vcd=foo not default as it takes very long
 EMU_CMD  = cd package;./launch_hw_emu.sh -timeout 18000
 
 ##########################################################################################################################################################
