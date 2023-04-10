@@ -22,8 +22,8 @@ GRAPH    = aie/graph.cpp
 LIBADF   = libadf.a
 
 AIE_CMPL_CMD = aiecompiler -log-level=5 -v -platform=${PLATFORM} --pl-freq=500 -genArchive -include="./aie" -include="./aie/inc" -include="./aie/kernels" -include="./data" -include="./" --Xpreproc="-DITER_CNT=10" --xlopt=0 --num-trace-streams=8 --event-trace=runtime --event-trace-port=plio --broadcast-enable-core=true -workdir=./Work ${GRAPH}
-AIE_SIM_CMD = aiesimulator --pkg-dir=./Work
-EMU_CMD  = cd package;./launch_hw_emu.sh -timeout 18000
+AIE_SIM_CMD = aiesimulator --pkg-dir=./Work # --profile --dump-vcd=foo not default as it takes very long
+EMU_CMD  = cd package;./launch_hw_emu.sh
 
 ##########################################################################################################################################################
 ### DO NOT MODIFY BELOW THIS LINE UNLESS NECESSARY
@@ -93,31 +93,24 @@ guard-SDKTARGETSYSROOT:
 data:
 	wget https://www.xilinx.com/bin/public/openDownload?filename=beamformer_data.zip -O beamformer_data.zip && unzip beamformer_data.zip
 
+PKG_FLAGS = --package.rootfs ${ROOTFS} \
+						--package.kernel_image ${IMAGE} \
+						--package.boot_mode=sd \
+						--package.image_format=ext4 \
+						--package.defer_aie_run \
+						--package.sd_dir data \
+						--package.sd_file embedded_exec.sh \
+						--package.sd_file ${HOST_EXE} \
+						--package.out_dir package
+
 package: guard-ROOTFS guard-IMAGE guard-PLATFORM_REPO_PATHS package_${TARGET}
 package_${TARGET}: ${LIBADF} ${XSA} ${HOST_EXE} data 
-	${VCC} -p -t ${TARGET} -f ${PLATFORM} ${XSA} ${LIBADF} \
-		--package.rootfs ${ROOTFS} \
-		--package.kernel_image ${IMAGE} \
-		--package.boot_mode=sd \
-		--package.image_format=ext4 \
-		--package.defer_aie_run \
-		--package.sd_dir data \
-		--package.sd_file embedded_exec.sh \
-		--package.sd_file ${HOST_EXE}
+	${VCC} -p -t ${TARGET} -f ${PLATFORM} ${XSA} ${LIBADF} ${PKG_FLAGS}
 
 package_dbg: guard-ROOTFS guard-IMAGE guard-PLATFORM_REPO_PATHS package_dbg_${TARGET}
 package_dbg_${TARGET}: ${LIBADF} ${XSA} ${HOST_EXE} data 
-	${VCC} -p -t ${TARGET} -f ${PLATFORM} ${XSA} ${LIBADF} \
-		--package.rootfs ${ROOTFS} \
-		--package.kernel_image ${IMAGE} \
-		--package.boot_mode=sd \
-		--package.image_format=ext4 \
-		--package.defer_aie_run \
-		--package.enable_aie_debug \
-		--package.sd_dir data \
-		--package.sd_file embedded_exec.sh \
-		--package.sd_file ${HOST_EXE} \
-		--package.out_dir package
+	${VCC} -p -t ${TARGET} -f ${PLATFORM} ${XSA} ${LIBADF} ${PKG_FLAGS} \
+		--package.enable_aie_debug
 
 run_hw_emu: launch_hw_emu.sh
 launch_hw_emu.sh: package_hw_emu
