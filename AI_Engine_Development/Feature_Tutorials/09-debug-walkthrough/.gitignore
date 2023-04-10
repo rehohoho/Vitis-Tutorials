@@ -8,6 +8,8 @@
 *.xclbin
 *.exe
 *summary
+*.vcd
+pl_sample_count*
 
 .run/
 .Xil/
@@ -19,3 +21,6 @@ Work/
 sd_card/
 sim/
 package/
+workspace/
+x86simulator_output/
+aiesimulator_output/

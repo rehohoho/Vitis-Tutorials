@@ -11,8 +11,8 @@
 # limitations under the License.
 #
 #Set the required variables
-set vitis_install "/proj/xbuilds/2022.1_released/installs/lin64/Vitis/2022.1"
-set aie_work_dir "${PROJECT_DIR}/Work"
+set vitis_install "/tools/Xilinx/Vitis/2022.2"
+set aie_work_dir "/home/ruien/workspace/Vitis-Tutorials/AI_Engine_Development/Feature_Tutorials/09-debug-walkthrough/Work"
 set aie_mem_sock_port "10100"
 set xrt_server_port "4352"
 set app_name "aie_debug"
