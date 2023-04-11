@@ -18,8 +18,8 @@ DEST_DIR ?= $(CURDIR)
 MK_PATH := $(abspath $(lastword Makefile))
 MK_DIR := $(patsubst %/,%,$(dir $(MK_PATH)))
 DSPLIB_ROOT ?= ${MK_DIR}/Vitis_Libraries/dsp
-ROOTFS = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2022.2/rootfs.ext4
-IMAGE = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2022.2/Image
+ROOTFS = /tools/xilinx-versal-common-v2022.2/rootfs.ext4
+IMAGE = /tools/xilinx-versal-common-v2022.2/Image
 SDKTARGETSYSROOT ?= ${SYSROOT}
 BASE_PLATFORM ?= ${PLATFORM_REPO_PATHS}/xilinx_vck190_base_202220_1/xilinx_vck190_base_202220_1.xpfm
 PYTHONPATH += ${XILINX_VIVADO}/data/emulation/hw_em/lib/python/:${XILINX_VIVADO}/data/emulation/ip_utils/xtlm_ipc/xtlm_ipc_v1_0/python/
@@ -170,7 +170,8 @@ package: guard-PLATFORM_REPO_PATHS guard-IMAGE guard-ROOTFS
 		--package.kernel_image=${IMAGE} \
 		--package.defer_aie_run \
 		--package.sd_file embedded_exec.sh \
-		--package.sd_file host.exe ../tutorial.xsa ../libadf.a
+		--package.sd_file host.exe ../tutorial.xsa ../libadf.a \
+		--package.out_dir package/
 	@echo "COMPLETE: hw_emu package created."
 
 ###################################################################################################
