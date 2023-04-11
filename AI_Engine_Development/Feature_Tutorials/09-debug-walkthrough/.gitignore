@@ -9,6 +9,11 @@
 *.exe
 *summary
 *.vcd
+*.jou
+event_trace*
+aie_event*
+aie_status*
+aieshim_status*
 pl_sample_count*
 
 .run/
@@ -24,3 +29,4 @@ package/
 workspace/
 x86simulator_output/
 aiesimulator_output/
+build*
