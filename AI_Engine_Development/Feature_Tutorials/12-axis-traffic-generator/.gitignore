@@ -1,0 +1,23 @@
+# aiecompile
+Work/
+*.log
+*.a
+*.csv
+*.db
+
+# xclbin
+_x/
+.Xil/
+*summary
+*.xclbin
+*.xsa
+
+# host
+*.o
+*.exe
+
+# package
+sd_card/
+sim/
+cfg/
+package/
