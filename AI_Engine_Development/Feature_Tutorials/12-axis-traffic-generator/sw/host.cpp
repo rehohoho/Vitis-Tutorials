@@ -78,7 +78,7 @@ int main(int argc, char ** argv)
 	mygraph_top.init();
 	
 	printf("graph run -\n");
-	mygraph_top.run(1);
+	mygraph_top.run(-1);
 	
 	mygraph_top.end();
 

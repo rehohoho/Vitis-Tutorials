@@ -98,20 +98,24 @@ class IQData():
             #Create both Master and Slave ipc utils. 
             #The argument strings must match the names in system.cfg
             
-        self.tx_to_aie(self.convert_numpy_to_bytes(),False)
-        print("Data sent to AIE. Waiting for results...this may take a few minutes")  
+        while True:
+            self.tx_to_aie(self.convert_numpy_to_bytes(),False)
+            print("Data sent to AIE. Waiting for results...this may take a few minutes")  
 
-        if ipc:
-            p= mp.Process(target=self.rx_from_aie())
-            p.start()
-            aie_output = self.parent_conn0.recv()
-            print("Data received from AIE ") 
-    
-            p.join()
+            if ipc:
+                p= mp.Process(target=self.rx_from_aie())
+                p.start()
+                aie_output = self.parent_conn0.recv()
+                print("Data received from AIE ") 
         
-        if (not self.supressplots):
-            self.plot_results(self.input_cplx_data,aie_output)
-            input("Enter any key to end simulation")   
+                p.join()
+            
+            if (not self.supressplots):
+                self.plot_results(self.input_cplx_data,aie_output)
+            
+            inpkey = input("Enter 'c' to go again, any other key to end simulation")
+            if inpkey != 'c':
+                break
 
         self.rx_axis.disconnect()
         self.tx_axis.end_of_simulation()
