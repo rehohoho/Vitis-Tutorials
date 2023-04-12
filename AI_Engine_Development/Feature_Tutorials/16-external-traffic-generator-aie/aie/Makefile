@@ -57,20 +57,6 @@ endif
 .ONESHELL:
 .PHONY: clean all aie disp
 
-###
-# Guarding Checks. Do not modify.
-###
-check_defined = \
-	$(strip $(foreach 1,$1, \
-		$(call __check_defined,$1,$(strip $(value 2)))))
-
-__check_defined = \
-	$(if $(value $1),, \
-		$(error Undefined $1$(if $2, ($2))))
-
-guard-PLATFORM_REPO_PATHS:
-	$(call check_defined, PLATFORM_REPO_PATHS, Set your where you downloaded xilinx_vck190_base_202120_1)
-
 disp:
 	echo "TARGET = '"${TARGET}"'"
 	echo "EXTIO = '"${EXTIO}"'"
@@ -84,8 +70,6 @@ ifeq (${TARGET}, sw_emu)
 else
 	$(AIECC) --target=hw $(AIE_FLAGS) $(GRAPH)
 endif
-
-
 
 aiesim: $(GRAPH_O)
 ifeq (${EXTIO}, false)

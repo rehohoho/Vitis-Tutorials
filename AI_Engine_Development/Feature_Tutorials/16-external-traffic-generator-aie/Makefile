@@ -56,11 +56,11 @@ all_run_emu:  aie kernels xclbin host package traffic_gen run_emu
 
 #Check environment setup
 ifndef ROOTFS
-  ROOTFS = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2021.2/rootfs.ext4
+  ROOTFS = ${XILINX_VERSAL_SW}/rootfs.ext4
   export ROOTFS
 endif
 ifndef IMAGE
-  IMAGE = ${PLATFORM_REPO_PATHS}/sw/versal/xilinx-versal-common-v2021.2/Image
+  IMAGE = ${XILINX_VERSAL_SW}/Image
   export IMAGE
 endif
 
@@ -228,16 +228,17 @@ package: guard-PLATFORM_REPO_PATHS guard-IMAGE guard-ROOTFS
 		--package.defer_aie_run \
 		--package.sd_file host.exe  ../tutorial.xsa  ../aie/libadf.a \
 		--package.sd_file ../addon_files/run_sw_emu.sh \
-		--package.sd_file ../addon_files/run_hw_emu.sh
+		--package.sd_file ../addon_files/run_hw_emu.sh \
+		--package.out_dir package
 
 ###################################################################################################
 
 # Hardware Emulation
 
-HW_EMU := ./launch_hw_emu.sh
+HW_EMU := ./package/launch_hw_emu.sh
 #-aie-sim-options ../aiesimulator_output/aiesim_options.txt
 #-run-app run_hw_emu.sh
-SW_EMU := ./launch_sw_emu.sh
+SW_EMU := ./package/launch_sw_emu.sh
 #-run-app run_sw_emu.sh
 
 run_emu:
@@ -280,6 +281,6 @@ clean:
 	cd sw;
 	rm -rf *.txt *.log *.bin *.img *summary *.wcfg *.wdb *.o *.exe .Xil
 	rm -rf a.xsa a.xclbin BOOT.BIN  boot_image.bif  cfg  cips_config_file.json
-	rm -rf launch_sw_emu.sh  launch_hw_emu.sh
+	rm -rf package/launch_sw_emu.sh  package/launch_hw_emu.sh
 	rm -rf qemu* x86simulator_output pl_script.sh
 	rm -rf dtb_creation.sh  emu_qemu_scripts  sd_card  sim  _x
