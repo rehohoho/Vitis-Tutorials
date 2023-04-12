@@ -1,0 +1,29 @@
+# aie
+Work/
+.Xil/
+AIECompiler.log
+Map_Report.csv
+sol.db
+xcd.log
+*.a
+
+# vitis analyzer
+vitis_analyzer*
+
+# aiesim
+*.vcd
+pl_sample_counts*
+aiesimulator_output/
+.AIE_SIM_CMD_LINE_OPTIONS
+ISS_RPC_SERVER_PORT
+AIESimulator.log
+diag_report.log
+xsc_report.log
+
+# xsa
+_x/
+*.xo
+*.xsa
+*.compile_summary
+*.link_summary
+v++*.log
