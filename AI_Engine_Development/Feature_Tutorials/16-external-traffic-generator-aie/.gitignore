@@ -1,0 +1,29 @@
+# aie
+Work/
+*.log
+*.csv
+*.db
+*.a
+
+# aiesimulator
+aiesimulator_output/
+.AIE_SIM_CMD_LINE_OPTIONS
+pl_sample_counts*
+*.txt
+
+# traffic_gen
+chain
+
+# xclbin
+_x/
+*.o
+*.xsa
+*.xclbin
+*.link_summary
+
+# host
+sw/*.exe
+
+# package
+sw/package/
+*.package_summary
