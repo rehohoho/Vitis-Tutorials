@@ -94,20 +94,24 @@ WORK_DIR := Work
 ### Build for x86 simulation
 Ensure LD_LIBRARY_PATH includes x86 version of Xilinx. e.g. `/opt/xilinx/xrt/lib`.
 ```bash
-make kernels TARGET=sw_emu 
 make graph TARGET=sw_emu
 make x86sim TARGET=sw_emu # logs at <buildDir/x86simulator_output>, generates emconfig too
-make xsa TARGET=sw_emu
+
+# x86 sim
+make kernels TARGET=sw_emu 
+make xsa TARGET=sw_emu EN_TRACE=1
 make application TARGET=sw_emu
 make package TARGET=sw_emu
+cp design/profiling_configs/xrt.ini build/gemm_32x32x32/x1/sw_emu/
 export XCL_EMULATION_MODE=sw_emu
 export XILINX_XRT=/opt/xilinx/xrt/
 export X86SIM_OPTIONSPATH=/home/ruien/workspace/Vitis-Tutorials/AI_Engine_Development/Design_Tutorials/10-GeMM_AIEvsDSP/AIE/build/gemm_32x32x32/x1/sw_emu/Work/options/x86sim.options #x86sim
 cd build/gemm_32x32x32/x1/sw_emu/
 ./gemm_aie_xrt.elf a.xclbin
 
+# qemu sim
 make application TARGET=sw_emu SW_SIM=qemu
-make package TARGET=sw_emu SW_SIM=qemu
+make package TARGET=sw_emu SW_SIM=qemu EN_TRACE=1
 cd build/gemm_32x32x32/x1/sw_emu/package
 ./launch_sw_emu.sh -x86-sim-options /home/ruien/workspace/Vitis-Tutorials/AI_Engine_Development/Design_Tutorials/10-GeMM_AIEvsDSP/AIE/build/gemm_32x32x32/x1/sw_emu/Work/options/x86sim.options #QEMU
 export XILINX_XRT=/usr
@@ -115,11 +119,31 @@ export XCL_EMULATION_MODE=sw_emu
 export LD_LIBRARY_PATH=/run/media/mmcblk0p1:/tmp:$LD_LIBRARY_PATH
 ./gemm_aie_xrt.elf a.xclbin
 
-make kernels
+# hw emu (EN_TRACE=1 to enable profile)
 make graph
-make xsa
+make vcd   # only hw_emu/hw has Work/cfg/scsim.config, args: --profile --vcd_dump (trace)
+
+make kernels
+make xsa EN_TRACE=1
 make application
-make package
+make package EN_TRACE=1
+cd build/gemm_32x32x32/x1/hw_emu/package
+./launch_hw_emu.sh -forward-port 1440 22
+export XILINX_XRT=/usr
+./gemm_aie_xrt.elf a.xclbin
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P 1440 -r root@127.0.0.1:/mnt/out .
+
+# hw
+make kernels TARGET=hw
+make graph TARGET=hw
+make aiesim_profile # only hw_emu/hw has Work/cfg/scsim.config
+make vcd
+
+make xsa TARGET=hw EN_TRACE=1
+make application TARGET=hw
+make package TARGET=hw EN_TRACE=1
+cd build/gemm_32x32x32/x1/hw/package
+./launch_hw_emu.sh
 export XILINX_XRT=/usr
 ./gemm_aie_xrt.elf a.xclbin
 ```

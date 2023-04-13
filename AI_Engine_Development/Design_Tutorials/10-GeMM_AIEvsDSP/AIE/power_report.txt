@@ -1,0 +1,219 @@
+Copyright 1986-2023 Xilinx, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version     : Vivado v.2022.2.2 (lin64) Build 3788238 Tue Feb 21 19:59:23 MST 2023
+| Date             : Wed Mar 29 14:27:31 2023
+| Host             : ruien-UN5401QA running 64-bit Ubuntu 20.04.4 LTS
+| Command          : report_power -file /home/ruien/workspace/Vitis-Tutorials/AI_Engine_Development/Design_Tutorials/10-GeMM_AIEvsDSP/AIE/power_report.txt -name power_1
+| Design           : vitis_design_wrapper
+| Device           : xcvc1902-vsva2197-2MP-e-S
+| Design State     : routed
+| Grade            : extended
+| Process          : typical
+| Characterization : Production
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Power Report
+
+Table of Contents
+-----------------
+1. Summary
+1.1 On-Chip Components
+1.2 Power Supply Summary
+1.3 Confidence Level
+2. Settings
+2.1 Environment
+2.2 Clock Constraints
+3. Detailed Reports
+3.1 By Hierarchy
+
+1. Summary
+----------
+
++--------------------------+--------------+
+| Total On-Chip Power (W)  | 29.686       |
+| Design Power Budget (W)  | Unspecified* |
+| Power Budget Margin (W)  | NA           |
+| Dynamic (W)              | 16.148       |
+| Device Static (W)        | 13.538       |
+| Effective TJA (C/W)      | 2.5          |
+| Max Ambient (C)          | 25.0         |
+| Junction Temperature (C) | 100.0        |
+| Confidence Level         | Low          |
+| Setting File             | ---          |
+| Simulation Activity File | ---          |
+| Design Nets Matched      | NA           |
++--------------------------+--------------+
+* Specify Design Power Budget using, set_operating_conditions -design_power_budget <value in Watts>
+
+
+1.1 On-Chip Components
+----------------------
+
++--------------------------+-----------+----------+-----------+-----------------+
+| On-Chip                  | Power (W) | Used     | Available | Utilization (%) |
++--------------------------+-----------+----------+-----------+-----------------+
+| Clocks                   |     0.205 |       28 |       --- |             --- |
+| Logic                    |     0.101 |    59875 |       --- |             --- |
+|   LUT as Distributed RAM |     0.060 |     2484 |    449920 |            0.55 |
+|   LUT as Logic           |     0.033 |    14390 |    899840 |            1.60 |
+|   CLE FF Register        |     0.006 |    33407 |   1799680 |            1.86 |
+|   LUT as Shift Register  |     0.002 |      455 |    449920 |            0.10 |
+|   LOOKAHEAD8             |    <0.001 |       69 |    112480 |            0.06 |
+|   Others                 |     0.000 |     1609 |       --- |             --- |
+| Signals                  |     0.144 |    56928 |       --- |             --- |
+| MMCM                     |     0.057 |        0 |       --- |             --- |
+| XPLL                     |     0.738 |        9 |        24 |           37.50 |
+| I/O                      |     3.920 |      382 |       --- |             --- |
+| AIE                      |     8.239 |        1 |       400 |            0.25 |
+| NoC-DDRMC                |     1.428 |        4 |       --- |             --- |
+|   NoC                    |     1.245 |        1 |       --- |             --- |
+|   DDRMC                  |     0.183 |        3 |         4 |           75.00 |
+| PS9                      |     1.316 |        1 |       --- |             --- |
+| Static Power             |    13.538 |          |           |                 |
+|   PS Static              |     0.237 |          |           |                 |
+|   PL Static              |    13.301 |          |           |                 |
+| Total                    |    29.686 |          |           |                 |
++--------------------------+-----------+----------+-----------+-----------------+
+
+
+1.2 Power Supply Summary
+------------------------
+
++-------------+-------------+-----------+-------------+------------+-------------+-------------+------------+
+| Source      | Voltage (V) | Total (A) | Dynamic (A) | Static (A) | Powerup (A) | Budget (A)  | Margin (A) |
++-------------+-------------+-----------+-------------+------------+-------------+-------------+------------+
+| Vccint      |       0.800 |    23.176 |      10.774 |     12.402 |       NA    | Unspecified | NA         |
+| VCC_SOC     |       0.800 |     3.145 |       1.819 |      1.326 |       NA    | Unspecified | NA         |
+| VCC_IO      |       0.800 |     2.695 |       2.508 |      0.187 |       NA    | Unspecified | NA         |
+| VCCRAM      |       0.800 |     0.130 |       0.055 |      0.075 |       NA    | Unspecified | NA         |
+| Vccaux      |       1.500 |     2.678 |       0.750 |      1.928 |       NA    | Unspecified | NA         |
+| VCC_PMC     |       0.800 |     0.309 |       0.265 |      0.045 |       NA    | Unspecified | NA         |
+| VCCO_503    |       3.300 |     0.003 |       0.000 |      0.003 |       NA    | Unspecified | NA         |
+| VCCO_500    |       1.800 |     0.058 |       0.058 |      0.000 |       NA    | Unspecified | NA         |
+| VCCO_501    |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| VCCO_502    |       1.800 |     0.032 |       0.031 |      0.001 |       NA    | Unspecified | NA         |
+| VCCAUX_PMC  |       1.500 |     0.070 |       0.068 |      0.002 |       NA    | Unspecified | NA         |
+| VCCAUX_SMON |       1.500 |     0.003 |       0.000 |      0.003 |       NA    | Unspecified | NA         |
+| VCC_PSLP    |       0.800 |     0.306 |       0.215 |      0.092 |       NA    | Unspecified | NA         |
+| VCC_PSFP    |       0.800 |     0.991 |       0.839 |      0.153 |       NA    | Unspecified | NA         |
+| Vcco33      |       3.300 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| Vcco25      |       2.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| Vcco18      |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| Vcco15      |       1.500 |     0.008 |       0.001 |      0.007 |       NA    | Unspecified | NA         |
+| Vcco135     |       1.350 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| Vcco12      |       1.200 |     0.452 |       0.435 |      0.017 |       NA    | Unspecified | NA         |
+| Vcco11      |       1.100 |     0.994 |       0.963 |      0.032 |       NA    | Unspecified | NA         |
+| Vcco10      |       1.000 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| VCC_FUSE    |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| VCC_BATT    |       1.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| GTY_AVCCAUX |       1.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| GTY_AVCC    |       0.880 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
+| GTY_AVTT    |       1.200 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
++-------------+-------------+-----------+-------------+------------+-------------+-------------+------------+
+
+
+1.3 Confidence Level
+--------------------
+
++-----------------------------+------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------+
+| User Input Data             | Confidence | Details                                                | Action                                                                                                     |
++-----------------------------+------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------+
+| Design implementation state | High       | Design is routed                                       |                                                                                                            |
+| Clock nodes activity        | High       | User specified more than 95% of clocks                 |                                                                                                            |
+| I/O nodes activity          | Low        | More than 75% of inputs are missing user specification | Provide missing input activity with simulation results or by editing the "By Resource Type -> I/Os" view   |
+| Internal nodes activity     | Medium     | User specified less than 25% of internal nodes         | Provide missing internal nodes activity with simulation results or by editing the "By Resource Type" views |
+| Device models               | High       | Device models are Production                           |                                                                                                            |
+|                             |            |                                                        |                                                                                                            |
+| Overall confidence level    | Low        |                                                        |                                                                                                            |
++-----------------------------+------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------+
+
+
+2. Settings
+-----------
+
+2.1 Environment
+---------------
+
++------------------+------+
+| Ambient Temp (C) | 25.0 |
+| ThetaJA (C/W)    | 2.5  |
++------------------+------+
+
+
+2.2 Clock Constraints
+---------------------
+
++---------------------------+----------------------------------------------------------------------------------------+-----------------+
+| Clock                     | Domain                                                                                 | Constraint (ns) |
++---------------------------+----------------------------------------------------------------------------------------+-----------------+
+| bank1_clkout0             | vitis_design_i/noc_ddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/bank1_clkout0             |             1.2 |
+| bank1_clkout0_1           | vitis_design_i/noc_lpddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/bank1_clkout0           |             1.0 |
+| bank1_clkout0_2           | vitis_design_i/noc_lpddr4/inst/MC1_ddrc/inst/noc_ddr4_phy/inst/bank1_clkout0           |             1.0 |
+| bank1_xpll0_fifo_rd_clk   | vitis_design_i/noc_ddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/bank1_xpll0_fifo_rd_clk   |             1.2 |
+| bank1_xpll0_fifo_rd_clk_1 | vitis_design_i/noc_lpddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/bank1_xpll0_fifo_rd_clk |             1.0 |
+| bank1_xpll0_fifo_rd_clk_2 | vitis_design_i/noc_lpddr4/inst/MC1_ddrc/inst/noc_ddr4_phy/inst/bank1_xpll0_fifo_rd_clk |             1.0 |
+| clk_pl_0                  | vitis_design_i/CIPS_0/inst/pspmc_0/inst/pl0_ref_clk                                    |            10.0 |
+| clk_pl_0                  | vitis_design_i/CIPS_0/inst/pspmc_0/inst/pmc_pl_ref_clk[0]                              |            10.0 |
+| clkfbout_primitive        | vitis_design_i/clk_wizard_0/inst/clock_primitive_inst/clkfbout_primitive               |            10.0 |
+| clkout1_primitive         | vitis_design_i/clk_wizard_0/inst/clock_primitive_inst/clkout1_primitive                |             9.6 |
+| clkout3_primitive         | vitis_design_i/clk_wizard_0/inst/clock_primitive_inst/clkout3_primitive                |             3.2 |
+| ddr4_dimm1_sma_clk_clk_p  | ddr4_dimm1_sma_clk_clk_p                                                               |             5.0 |
+| lpddr4_sma_clk1_clk_p     | lpddr4_sma_clk1_clk_p                                                                  |             5.0 |
+| lpddr4_sma_clk2_clk_p     | lpddr4_sma_clk2_clk_p                                                                  |             5.0 |
+| mc_clk_xpll               | vitis_design_i/noc_ddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/mc_clk_xpll               |             1.2 |
+| mc_clk_xpll_1             | vitis_design_i/noc_lpddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/mc_clk_xpll             |             1.0 |
+| mc_clk_xpll_2             | vitis_design_i/noc_lpddr4/inst/MC1_ddrc/inst/noc_ddr4_phy/inst/mc_clk_xpll             |             1.0 |
+| pll_clk_xpll              | vitis_design_i/noc_ddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/pll_clk_xpll              |             0.3 |
+| pll_clk_xpll_1            | vitis_design_i/noc_lpddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/pll_clk_xpll            |             0.3 |
+| pll_clk_xpll_2            | vitis_design_i/noc_lpddr4/inst/MC1_ddrc/inst/noc_ddr4_phy/inst/pll_clk_xpll            |             0.3 |
+| pll_clktoxphy[0]          | vitis_design_i/noc_ddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/pll_clktoxphy[0]          |             0.3 |
+| pll_clktoxphy[0]_1        | vitis_design_i/noc_lpddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/pll_clktoxphy[0]        |             0.3 |
+| pll_clktoxphy[0]_2        | vitis_design_i/noc_lpddr4/inst/MC1_ddrc/inst/noc_ddr4_phy/inst/pll_clktoxphy[0]        |             0.3 |
+| pll_clktoxphy[2]          | vitis_design_i/noc_ddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/pll_clktoxphy[2]          |             0.3 |
+| pll_clktoxphy[2]_1        | vitis_design_i/noc_lpddr4/inst/MC0_ddrc/inst/noc_ddr4_phy/inst/pll_clktoxphy[2]        |             0.3 |
+| pll_clktoxphy[2]_2        | vitis_design_i/noc_lpddr4/inst/MC1_ddrc/inst/noc_ddr4_phy/inst/pll_clktoxphy[2]        |             0.3 |
++---------------------------+----------------------------------------------------------------------------------------+-----------------+
+
+
+3. Detailed Reports
+-------------------
+
+3.1 By Hierarchy
+----------------
+
++-------------------------+-----------+
+| Name                    | Power (W) |
++-------------------------+-----------+
+| vitis_design_wrapper    |    16.148 |
+|   vitis_design_i        |    16.148 |
+|     CIPS_0              |     1.317 |
+|       inst              |     1.317 |
+|     ai_engine_0         |     8.427 |
+|       inst              |     0.187 |
+|     axi_intc_cascaded_1 |     0.002 |
+|       U0                |     0.002 |
+|     axi_intc_parent     |     0.002 |
+|       U0                |     0.002 |
+|     cips_noc            |     1.245 |
+|       inst              |     1.245 |
+|     clk_wizard_0        |     0.058 |
+|       inst              |     0.058 |
+|     dma_hls_0           |     0.025 |
+|       inst              |     0.025 |
+|     icn_ctrl_1          |     0.134 |
+|       inst              |     0.134 |
+|     icn_ctrl_2          |     0.007 |
+|       inst              |     0.007 |
+|     icn_ctrl_3          |     0.007 |
+|       inst              |     0.007 |
+|     icn_ctrl_4          |     0.007 |
+|       inst              |     0.007 |
+|     icn_ctrl_5          |     0.007 |
+|       inst              |     0.007 |
+|     noc_ddr4            |     1.540 |
+|       inst              |     1.540 |
+|     noc_lpddr4          |     3.368 |
+|       inst              |     3.368 |
++-------------------------+-----------+
+
+

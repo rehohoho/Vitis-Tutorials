@@ -307,11 +307,13 @@ GCC_LIB += -lxrt_coreutil
 ifeq ($(TARGET),sw_emu)
   ifeq ($(SW_SIM),x86)
     CXX := g++
+		GCC_FLAGS += -D__SYNCBO_ENABLE__
     GCC_INC_FLAGS += -I${XILINX_X86_XRT}/include
 
     GCC_INC_LIB += -L${XILINX_X86_XRT}/lib
     GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
 		GCC_LIB += -pthread
+		GCC_LIB += -lxrt_core
   else
     GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include/xrt
     GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include
@@ -397,6 +399,7 @@ ifeq ($(TARGET),sw_emu)
     PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF)
     PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF_INF_RUN) 
     PKG_FLAGS += --package.sd_file $(EXEC_SCRIPTS_REPO)/$(EMBEDDED_EXEC_SCRIPT)
+		PKG_FLAGS += --package.sd_dir ${AIE_SIM_IO_DIR}
   endif
 else
 	PKG_FLAGS += --package.rootfs $(COMMON_IMAGE_VERSAL)/rootfs.ext4
