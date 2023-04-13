@@ -18,6 +18,7 @@ limitations under the License. */
 
 #include "core03.h"
 
+
 void core03(
         const int RowA_tile,
         const int ColA_tile,
