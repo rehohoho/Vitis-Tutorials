@@ -14,19 +14,14 @@ limitations under the License. */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "aie_api/aie.hpp"
 
 #include "core04.h"
-#include "core04lut.h"
-
-
-
 
 int8_t A_04[ROW_A_4 * COL_A_4];
 
 
-
-#ifndef INLINE
-INLINE_DECL void core04(
+void core04(
         const int RowA_tile,
         const int ColA_tile,
         const int ColB_tile,
@@ -140,7 +135,6 @@ INLINE_DECL void core04(
 	
 	}
 }
-#endif
 
 void core04_top(input_window_int32 *inA1, input_window_int32 *inA2, output_window_int32 *out){
   const int rowA = ROW_A_4;

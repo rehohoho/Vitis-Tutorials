@@ -14,17 +14,11 @@ limitations under the License. */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "aie_api/aie.hpp"
 
 #include "core03.h"
-#include "core03lut.h"
 
-
-
-
-
-
-#ifndef INLINE
-INLINE_DECL void core03(
+void core03(
         const int RowA_tile,
         const int ColA_tile,
         const int ColB_tile,
@@ -127,7 +121,6 @@ INLINE_DECL void core03(
 
 
 }
-#endif
 
 void core03_top(input_window_int32 *inA, 
                 output_window_int32 *out){
@@ -146,4 +139,3 @@ void core03_top(input_window_int32 *inA,
            (int8_t *) out -> ptr, 
            shift);
 }
-

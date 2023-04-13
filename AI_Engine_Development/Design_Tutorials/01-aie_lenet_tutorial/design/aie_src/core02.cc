@@ -14,13 +14,12 @@ limitations under the License. */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "aie_api/aie.hpp"
 
 #include "core02.h"
-#include "core02lut.h"
 
 
-#ifndef INLINE
-INLINE_DECL void core02(
+void core02(
         const int RowA_tile,
         const int ColA_tile,
         const int ColB_tile,
@@ -92,7 +91,7 @@ INLINE_DECL void core02(
 	}
 
 }
-#endif
+
 void core02_top(input_window_int32 *inA, output_window_int32 *out){
     int shift = 8;
     set_sat();

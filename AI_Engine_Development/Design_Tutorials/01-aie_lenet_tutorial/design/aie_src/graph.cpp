@@ -12,17 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <adf.h>
 #include "core01.h"
 #include "core02.h"
 #include "core03.h"
 #include "core05.h"
 #include "core04.h"
-#include "core01lut.h"
-#include "core02lut.h"
-#include "core03lut.h"
-#include "core05lut.h"
-#include "core04lut.h"
-#include <adf.h>
 
 class myGraph : public adf::graph { 
 private:
@@ -143,7 +138,7 @@ adf::simulation::platform<4,3> platform(attr_i1,attr_i2,attr_i3,attr_i4,attr_o1,
   adf::connect<> net050(platform.src[3], g.in[3]);
   adf::connect<> net04_0(g.out[2], platform.sink[2]);
 
-#ifdef __AIESIM__
+#if defined(__AIESIM__) || defined(__X86SIM__)
    int main(int argc, char ** argv)
    { 
       g.init();

@@ -14,18 +14,12 @@ limitations under the License. */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "aie_api/aie.hpp"
 
 #include "core05.h"
-#include "core05lut.h"
 
 
-
-
-
-
-
-#ifndef INLINE
-INLINE_DECL void core05(
+void core05(
         const int RowA_tile,
         const int ColA_tile,
         const int ColB_tile,
@@ -125,7 +119,6 @@ INLINE_DECL void core05(
     }
     *ptrC_relu = 8;
 }
-#endif
 
 void core05_top(input_window_int32 *inA, 
                 output_window_int32 *out){
