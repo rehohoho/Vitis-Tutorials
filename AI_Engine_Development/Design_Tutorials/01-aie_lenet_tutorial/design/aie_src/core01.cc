@@ -20,11 +20,11 @@ limitations under the License. */
 
 
 void core01(
-        const int RowA_tile,
-        const int ColA_tile,
-        const int ColB_tile,
-        int8_t* A_in,
-        int8_t* C_out,
+	const int RowA_tile,
+	const int ColA_tile,
+	const int ColB_tile,
+	int8_t* A_in,
+	int8_t* C_out,
 	int shift
 ) {      
 	
@@ -32,21 +32,20 @@ void core01(
 	constexpr size_t sizeTileA = 4 * 8;
 	constexpr size_t sizeTileB = 8 * 4;
 	constexpr size_t sizeTileC = 4 * 4;
-
+	unsigned int i,j,z;
 
 	//********** Mul Intrinsic********/
 	using MMUL = aie::mmul<4, 8, 4, int8_t, int8_t>;
 
-    	unsigned int i,j,z;
 	
-
-	for (z=0; z<RowA_tile; z++) chess_loop_range(2,)
+	for (z=0; z<RowA_tile; z+=2) chess_loop_range(2,)
+	
 	{
 		//********** Output vector ********/
 		int8_t * __restrict pC1 = C_out + (      z * ColB_tile +       0) * sizeTileC;
 		int8_t * __restrict pC2 = C_out + ((z + 1) * ColB_tile +       0) * sizeTileC;
 
-		for (j=0; j<ColB_tile; j++) chess_loop_range(2,)
+		for (j=0; j<ColB_tile; j+=2) chess_loop_range(2,)
 		{
 			const int8_t * __restrict pA1 = A_in + (      z * ColA_tile +       0) * sizeTileA;
 			const int8_t * __restrict pA2 = A_in + ((z + 1) * ColA_tile +       0) * sizeTileA;
@@ -82,7 +81,7 @@ void core01(
 		}
 
 	}
-	
+
 }
 
 void core01_top(input_window_int32 *inA, output_window_int32 *out){
