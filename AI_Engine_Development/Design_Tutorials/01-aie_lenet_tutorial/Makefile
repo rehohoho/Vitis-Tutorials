@@ -57,7 +57,7 @@ help::
 	@echo  "  Default TARGET is hw_emu"
 	@echo  ""
 	@echo  "  make run_emu"
-	@echo  "  Command to run the hw emulator if LAUNCH_HW_EMU_EXEC variable is set to 1"
+	@echo  "  Command to run the hw emulator"
 	@echo  "  Default TARGET is hw_emu"
 	@echo  ""
 	@echo  "  make report_metrics"
@@ -86,7 +86,6 @@ help::
 	@echo  "    PL_FREQ        	 -specifies HLS kernel frequencies. Values: 250Mhz(default)"
 	@echo  "    ITER_CNT           -specifies design iteration count: Values: 8(default)"
 	@echo  "    EN_TRACE           -specifies whether to enable profiling for the design. Values: 0(disabled, default) and 1(enabled)"
-	@echo  "    LAUNCH_HW_EMU_EXEC -specifies whether to launch hw emulator when running make run_emu rule. Values: 0(disabled, default) and 1(enabled)"
 	@echo  ""
 
 # Print all options passed to Makefile
@@ -125,13 +124,6 @@ VPP_CLOCK_FREQ := $(shell printf "%.0f" `echo "${PL_FREQ} * $(HZ_UNIT)" | bc`)
 # Profiling/Trace and Datamover type Switches...
 # =========================================================
 EN_TRACE	:= 0
-
-######################################
-# When TARGET=hw_emu, hw_emu launch...
-# 1 = Enabled (Default).
-# 0 = Disabled.
-######################################
-LAUNCH_HW_EMU_EXEC := 0
 
 ############################################################
 # maximum cycle count for aiesimulator to get powerfrom vcd
@@ -183,12 +175,6 @@ WORK_DIR := Work
 # Below are the names for SDF graph, application executable,
 # kernel executables, and xsa
 # ==========================================================
-DATAMOVER_KERNEL_TOP := dma_hls
-DATAMOVER_KERNEL_XO  := $(DATAMOVER_KERNEL_TOP).$(TARGET)
-
-LENET_KERNEL_TOP := lenet_kernel
-LENET_KERNEL_XO  := $(PL_SRC_REPO)/$(LENET_KERNEL_TOP)/$(LENET_KERNEL_TOP).xo
-
 LIBADF_A := $(BUILD_TARGET_DIR)/libadf.a
 
 APP_OBJ_NAME := lenet_aie
@@ -242,30 +228,6 @@ GCC_INC_LIB += -lxrt_coreutil
 # =========================================================
 # Kernel Compiler and Linker Flags
 # ========================================================
-VPP_LINK_FLAGS := --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0
-VPP_LINK_FLAGS += --clock.freqHz $(VPP_CLOCK_FREQ):$(LENET_KERNEL_TOP)_0
-
-VPP_LINK_FLAGS += --clock.defaultTolerance 0.001
-VPP_LINK_FLAGS += --advanced.param compiler.userPostSysLinkOverlayTcl=$(DIRECTIVES_REPO)/noc_qos.tcl
-VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS).cfg
-
-VPP_LINK_FLAGS += --vivado.prop run.synth_1.STEPS.SYNTH_DESIGN.ARGS.CONTROL_SET_OPT_THRESHOLD=16
-
-ifeq ($(EN_TRACE),1)
-   ifeq ($(TARGET),hw)
-      VPP_LINK_FLAGS += --profile.data $(DATAMOVER_KERNEL_TOP):all:all
-      VPP_LINK_FLAGS += --profile.trace_memory DDR
-   
-   endif
-endif
-
-## Enabling Multiple Strategies For Closing Timing...
-#VPP_LINK_FLAGS += --vivado.impl.strategies "ALL"
-##VPP_LINK_FLAGS += --vivado.impl.lsf '{bsub -R "select[type=X86_64] rusage[mem=65536]" -N -q medium}'
-#VPP_LINK_FLAGS += --advanced.param "compiler.enableMultiStrategies=1"
-#VPP_LINK_FLAGS += --advanced.param "compiler.multiStrategiesWaitOnAllRuns=1"
-#VPP_LINK_FLAGS += --vivado.synth.jobs 32
-#VPP_LINK_FLAGS += --vivado.impl.jobs 20
 
 # =========================================================
 # Packaging Flags
@@ -305,6 +267,14 @@ PKG_FLAGS += --package.defer_aie_run
 #	dma_hls.[hw_emu | hw].xo.compile_summary  
 #	v++_dma_hls.[hw_emu | hw].log
 #	_x
+DATAMOVER_KERNEL_TOP := dma_hls
+DATAMOVER_KERNEL_XO  := $(DATAMOVER_KERNEL_TOP).$(TARGET)
+
+TRAFFICGEN_WIDTH := 32
+
+LENET_KERNEL_TOP := lenet_kernel
+LENET_KERNEL_XO  := $(PL_SRC_REPO)/$(LENET_KERNEL_TOP)/$(LENET_KERNEL_TOP).xo
+
 DATAMOVER_KERNEL_VPP_FLAGS := --hls.clock $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)
 
 VPP_FLAGS := --platform $(PLATFORM) \
@@ -316,10 +286,8 @@ VPP_FLAGS := --platform $(PLATFORM) \
 DATAMOVER_KERNEL_SRC := $(PL_SRC_REPO)/datamover/$(DATAMOVER_KERNEL_TOP).cpp
 
 ifeq (${EXTIO}, true)
-	KERNEL_XOS := $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_master_32.xo \
-								$(BUILD_TARGET_DIR)/sim_ipc_axis_master_32.xo \
-								$(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_slave_32.xo \
-								$(BUILD_TARGET_DIR)/sim_ipc_axis_slave_32.xo
+	KERNEL_XOS := $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_master_$(TRAFFICGEN_WIDTH).xo \
+								$(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_slave_$(TRAFFICGEN_WIDTH).xo
 else
 	KERNEL_XOS := $(LENET_KERNEL_XO) \
 								$(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo
@@ -333,16 +301,6 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 	v++ --target $(TARGET) $(DATAMOVER_KERNEL_VPP_FLAGS) \
 		$(VPP_FLAGS) -c -k $(DATAMOVER_KERNEL_TOP) \
 		$(DATAMOVER_KERNEL_SRC) -o $@
-
-$(BUILD_TARGET_DIR)/sim_ipc_axis_master_32.xo: 
-	mkdir -p $(BUILD_TARGET_DIR); \
-	cd $(BUILD_TARGET_DIR); \
-	cp -rf $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_master_32.xo $@
-
-$(BUILD_TARGET_DIR)/sim_ipc_axis_slave_32.xo: 
-	mkdir -p $(BUILD_TARGET_DIR); \
-	cd $(BUILD_TARGET_DIR); \
-	cp -rf $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_slave_32.xo $@
 
 # =========================================================
 # Step 2. AI Engine SDF Graph File and Work/ Directory 
@@ -445,9 +403,36 @@ $(BLD_TGT_VCD_FILE):
 #	vck190_aie_lenet.[hw_emu | hw].xsa.link_summary
 #	vck190_aie_lenet.[hw_emu | hw].xsa
 #	vck190_aie_lenet.[hw_emu | hw].log
+VPP_LINK_FLAGS := --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0 \
+                  --clock.freqHz $(VPP_CLOCK_FREQ):$(LENET_KERNEL_TOP)_0 \
+                  --clock.defaultTolerance 0.001 \
+                  --advanced.param compiler.userPostSysLinkOverlayTcl=$(DIRECTIVES_REPO)/noc_qos.tcl \
+                  --vivado.prop run.synth_1.STEPS.SYNTH_DESIGN.ARGS.CONTROL_SET_OPT_THRESHOLD=16
+
+ifeq (${EXTIO}, true)
+	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS)_etg.cfg
+else
+	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS).cfg
+endif
+
+ifeq ($(EN_TRACE),1)
+   ifeq ($(TARGET),hw)
+      VPP_LINK_FLAGS += --profile.data $(DATAMOVER_KERNEL_TOP):all:all \
+                        --profile.trace_memory DDR
+   endif
+endif
+
+## Enabling Multiple Strategies For Closing Timing...
+#VPP_LINK_FLAGS += --vivado.impl.strategies "ALL"
+#VPP_LINK_FLAGS += --vivado.impl.lsf '{bsub -R "select[type=X86_64] rusage[mem=65536]" -N -q medium}'
+#VPP_LINK_FLAGS += --advanced.param "compiler.enableMultiStrategies=1"
+#VPP_LINK_FLAGS += --advanced.param "compiler.multiStrategiesWaitOnAllRuns=1"
+#VPP_LINK_FLAGS += --vivado.synth.jobs 32
+#VPP_LINK_FLAGS += --vivado.impl.jobs 20
+
 xsa: kernels graph $(BUILD_TARGET_DIR)/$(XSA)
 
-$(BUILD_TARGET_DIR)/$(XSA):$(KERNEL_XOS) $(SYSTEM_CONFIGS_REPO)/*
+$(BUILD_TARGET_DIR)/$(XSA):$(KERNEL_XOS) $(LIBADF_A) $(SYSTEM_CONFIGS_REPO)/*
 	cd $(BUILD_TARGET_DIR);	\
 	v++ -l $(VPP_FLAGS) $(VPP_LINK_FLAGS) -t $(TARGET) -o $@ \
 		    $(KERNEL_XOS) $(LIBADF_A)
@@ -497,31 +482,11 @@ $(EMBEDDED_PACKAGE_OUT): $(PROFILING_CONFIGS_REPO)/* $(EXEC_SCRIPTS_REPO)/* $(AL
 # instructions in the README.md
 run_emu:
 ifeq ($(TARGET),hw_emu)
-	@echo ""
-	@echo "###########################################################################"
-
-ifeq ($(LAUNCH_HW_EMU_EXEC),0)
-	@echo "To Run Hardware Emulation Manually Goto:"
-	@echo "$(EMBEDDED_PACKAGE_OUT)"
-	@echo ""
-	@echo "and do:"
-	@echo "./launch_hw_emu.sh or ./launch_hw_emu.sh -g (for waveform viewer)..."
-	@echo ""
-
-else
 	cd $(EMBEDDED_PACKAGE_OUT); \
 	./launch_hw_emu.sh -run-app $(EMBEDDED_EXEC_SCRIPT) -no-reboot -timeout 4000 | tee embedded_run.log
-
-endif
-else
-	@echo ""
-	@echo "###########################################################################"
-	@echo "Hardware build, no emulation executed."
-	@echo ""
-	@echo "Use sd_card.img from below directory and, follow the steps in README.md for execution on board."
-	@echo "$(EMBEDDED_PACKAGE_OUT)"
-	@echo ""
-
+else # sw_emu
+	cd $(EMBEDDED_PACKAGE_OUT); \
+	./launch_sw_emu.sh -run-app $(EMBEDDED_EXEC_SCRIPT) -no-reboot -timeout 4000 | tee embedded_run.log
 endif
 
 # =========================================================
