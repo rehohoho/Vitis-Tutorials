@@ -19,8 +19,20 @@ SimGraph simGraph;
 #if defined(__AIESIM__) || defined(__X86SIM__)
 int main(int argc, char ** argv) {
 	simGraph.init();
-  simGraph.run(1);
-  simGraph.end();
+  
+  adf::return_code ret;
+  ret = simGraph.run(1);
+  if (ret != adf::ok) {
+    printf("Run failed\n");
+    return ret;
+  }
+
+  ret = simGraph.end();
+  if (ret != adf::ok){
+    printf("End failed\n");
+    return ret;
+  }
+  
   return 0;
 }
 #endif

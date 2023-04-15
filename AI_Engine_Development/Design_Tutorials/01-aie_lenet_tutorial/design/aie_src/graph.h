@@ -115,6 +115,16 @@ class SimGraph: public adf::graph {
     LenetGraph lenet;
 
     SimGraph() {
+#ifdef EXTERNAL_IO
+      plin1 = adf::input_plio::create("plin1", adf::plio_64_bits);
+      plin2 = adf::input_plio::create("plin2", adf::plio_64_bits);
+      plin3 = adf::input_plio::create("plin3", adf::plio_64_bits);
+      plin5 = adf::input_plio::create("plin5", adf::plio_64_bits);
+
+      plout1 = adf::output_plio::create("plout1", adf::plio_64_bits);
+      plout2 = adf::output_plio::create("plout2", adf::plio_64_bits);
+      plout4 = adf::output_plio::create("plout4", adf::plio_64_bits);
+#else
       plin1 = adf::input_plio::create("plin1", adf::plio_64_bits, "data/0_1/matA_in_64plio.txt");
       plin2 = adf::input_plio::create("plin2", adf::plio_64_bits, "data/0_2/matA_in_64plio.txt");
       plin3 = adf::input_plio::create("plin3", adf::plio_64_bits, "data/0_3/matA_in_64plio.txt");
@@ -123,6 +133,7 @@ class SimGraph: public adf::graph {
       plout1 = adf::output_plio::create("plout1", adf::plio_64_bits, "output01.txt");
       plout2 = adf::output_plio::create("plout2", adf::plio_64_bits, "output02.txt");
       plout4 = adf::output_plio::create("plout4", adf::plio_64_bits, "output04.txt");
+#endif
 
       adf::connect<> (plin1.out[0], lenet.in[0]);
       adf::connect<> (plin2.out[0], lenet.in[1]);
