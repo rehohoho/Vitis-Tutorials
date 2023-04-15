@@ -97,7 +97,8 @@ print-%  : ; @echo $* = $($*)
 #   hw_emu: Hardware Emulation
 #   hw    : Hardware Run
 # =========================================================
-TARGET := hw_emu
+TARGET ?= sw_emu
+EXTIO ?= true
 
 # =========================================================
 # No of LENET Instances can be set as:
@@ -197,7 +198,6 @@ XSA := vck190_$(APP_OBJ_NAME).$(TARGET).xsa
 # =========================================================
 # Kernel Source Files repository
 # =========================================================
-DATAMOVER_KERNEL_SRC := $(PL_SRC_REPO)/datamover/$(DATAMOVER_KERNEL_TOP).cpp
 
 # =========================================================
 # Graph Source files repository
@@ -213,30 +213,6 @@ AIE_CONTROL_CPP := $(BUILD_TARGET_DIR)/$(WORK_DIR)/ps/c_rts/aie_control_xrt.cpp
 # =========================================================
 # AIE Compiler Global Settings and Include Libraries
 # =========================================================
-AIE_FLAGS := -include=$(AIE_SRC_REPO) 
-AIE_FLAGS += -include=$(AIE_SRC_REPO)/data 
-AIE_FLAGS += --verbose 
-AIE_FLAGS += --Xpreproc="-DLENET_INSTS=$(LENET_INSTS)"
-AIE_FLAGS += --Xpreproc="-DITER_CNT=$(ITER_CNT)"
-AIE_FLAGS += --platform=$(PLATFORM)
-
-AIE_FLAGS += --log-level=5 
-#AIE_FLAGS += --test-iterations=100 
-AIE_FLAGS += --pl-freq=500
-AIE_FLAGS += --dataflow 
-
-AIE_FLAGS += --heapsize=2048 
-AIE_FLAGS += --workdir=$(WORK_DIR)
-
-#AIE_FLAGS += --Xmapper=BufferOptLevel9
-#AIE_FLAGS += --Xrouter=DMAFIFOsInFreeBankOnly
-
-# Aiesimulator flags
-#-i - Alias of --input-dir=<dir> option
-#-o - Alias of --output-dir=<dir> option
-AIE_SIM_FLAGS := --pkg-dir $(WORK_DIR)/
-AIE_SIM_FLAGS += -i=$(AIE_SRC_REPO)/aiesim_data
-AIE_SIM_FLAGS += --simulation-cycle-timeout $(MAX_CYCLES)
 # =========================================================
 # Application Compiler and Linker Flags
 # =========================================================
@@ -266,14 +242,6 @@ GCC_INC_LIB += -lxrt_coreutil
 # =========================================================
 # Kernel Compiler and Linker Flags
 # ========================================================
-VPP_FLAGS := --platform $(PLATFORM)
-VPP_FLAGS += --save-temps
-VPP_FLAGS += --temp_dir $(BUILD_TARGET_DIR)/_x
-VPP_FLAGS += --verbose 
-VPP_FLAGS += -g
-
-DATAMOVER_KERNEL_VPP_FLAGS := --hls.clock $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)
-
 VPP_LINK_FLAGS := --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0
 VPP_LINK_FLAGS += --clock.freqHz $(VPP_CLOCK_FREQ):$(LENET_KERNEL_TOP)_0
 
@@ -337,7 +305,25 @@ PKG_FLAGS += --package.defer_aie_run
 #	dma_hls.[hw_emu | hw].xo.compile_summary  
 #	v++_dma_hls.[hw_emu | hw].log
 #	_x
-KERNEL_XOS := $(LENET_KERNEL_XO) $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo
+DATAMOVER_KERNEL_VPP_FLAGS := --hls.clock $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)
+
+VPP_FLAGS := --platform $(PLATFORM) \
+					   --save-temps \
+					   --temp_dir $(BUILD_TARGET_DIR)/_x \
+					   --verbose \
+					   -g
+
+DATAMOVER_KERNEL_SRC := $(PL_SRC_REPO)/datamover/$(DATAMOVER_KERNEL_TOP).cpp
+
+ifeq (${EXTIO}, true)
+	KERNEL_XOS := $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_master_32.xo \
+								$(BUILD_TARGET_DIR)/sim_ipc_axis_master_32.xo \
+								$(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_slave_32.xo \
+								$(BUILD_TARGET_DIR)/sim_ipc_axis_slave_32.xo
+else
+	KERNEL_XOS := $(LENET_KERNEL_XO) \
+								$(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo
+endif
 
 kernels: $(KERNEL_XOS)
 
@@ -347,6 +333,16 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 	v++ --target $(TARGET) $(DATAMOVER_KERNEL_VPP_FLAGS) \
 		$(VPP_FLAGS) -c -k $(DATAMOVER_KERNEL_TOP) \
 		$(DATAMOVER_KERNEL_SRC) -o $@
+
+$(BUILD_TARGET_DIR)/sim_ipc_axis_master_32.xo: 
+	mkdir -p $(BUILD_TARGET_DIR); \
+	cd $(BUILD_TARGET_DIR); \
+	cp -rf $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_master_32.xo $@
+
+$(BUILD_TARGET_DIR)/sim_ipc_axis_slave_32.xo: 
+	mkdir -p $(BUILD_TARGET_DIR); \
+	cd $(BUILD_TARGET_DIR); \
+	cp -rf $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_slave_32.xo $@
 
 # =========================================================
 # Step 2. AI Engine SDF Graph File and Work/ Directory 
@@ -361,6 +357,27 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 #	NOC_Power.xpe
 #	Work/ 
 #	xnwOut/
+AIE_FLAGS := -include=$(AIE_SRC_REPO) \
+						 -include=$(AIE_SRC_REPO)/data \
+						 --verbose \
+						 --Xpreproc="-DLENET_INSTS=$(LENET_INSTS)" \
+						 --Xpreproc="-DITER_CNT=$(ITER_CNT)" \
+						 --platform=$(PLATFORM) \
+						 --log-level=5 \
+						 --pl-freq=500 \
+						 --dataflow \
+						 --heapsize=2048 \
+						 --workdir=$(WORK_DIR)
+ifeq (${TARGET}, sw_emu)
+	AIE_FLAGS += --target=x86sim --Xpreproc=-O0
+endif
+ifeq (${EXTIO}, true)
+	AIE_FLAGS += --Xpreproc=-DEXTERNAL_IO
+endif
+#AIE_FLAGS += --test-iterations=100 
+#AIE_FLAGS += --Xmapper=BufferOptLevel9
+#AIE_FLAGS += --Xrouter=DMAFIFOsInFreeBankOnly
+
 graph: $(LIBADF_A)
 
 $(LIBADF_A): $(AIE_SRC_REPO)/*
@@ -368,9 +385,35 @@ $(LIBADF_A): $(AIE_SRC_REPO)/*
 	cd $(BUILD_TARGET_DIR); \
 	aiecompiler $(AIE_FLAGS) $(GRAPH_SRC_CPP) 2>&1 | tee -a aiecompiler.log
 
+# =========================================================
+# Step 2b. AI Engine Simulation
+# ========================================================
+# Aiesimulator flags
+#-i - Alias of --input-dir=<dir> option
+#-o - Alias of --output-dir=<dir> option
+AIE_SIM_FLAGS := --pkg-dir=$(BUILD_TARGET_DIR)/$(WORK_DIR)/ \
+								 -i=$(AIE_SRC_REPO)/aiesim_data
+
+TRAFFIC_GEN_PY := $(DESIGN_REPO)/trafficgen/xtg_aie.py
+
 aiesim: graph
+ifeq (${EXTIO}, false)
+ifeq (${TARGET}, sw_emu)
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) 2>&1 | tee -a aiesim.log
+	x86simulator $(AIE_SIM_FLAGS) 2>&1 | tee -a x86sim_filetraffic.log
+else
+	cd $(BUILD_TARGET_DIR); \
+	aiesimulator $(AIE_SIM_FLAGS) 2>&1 | tee -a aiesim_filetraffic.log
+endif
+else  # Use External Traffic Generator
+ifeq (${TARGET}, sw_emu)
+	cd $(BUILD_TARGET_DIR); \
+	x86simulator $(AIE_SIM_FLAGS) & python3 ${TRAFFIC_GEN_PY} --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./x86simulator_output
+else
+	cd $(BUILD_TARGET_DIR); \
+	aiesimulator $(AIE_SIM_FLAGS) & python3 ${TRAFFIC_GEN_PY} --input_dir .$(AIE_SRC_REPO)/aiesim_data --output_dir ./aiesimulator_output
+endif
+endif
 
 aiesim_profile: graph
 	cd $(BUILD_TARGET_DIR); \

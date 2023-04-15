@@ -1,6 +1,7 @@
 from typing import List, Callable, Any, Tuple
 import os, sys
 import re
+import argparse
 
 import numpy as np
 import multiprocessing as mp
@@ -157,19 +158,24 @@ class ExternalTraffic:
 
 if __name__ == "__main__":
   
+  parser = argparse.ArgumentParser(description='xtg_aie.py')
+  parser.add_argument('--input_dir', required=True)
+  parser.add_argument('--output_dir', required=True)
+  args = parser.parse_args()
+  
   logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
   master_list = [
-    ("plin1", "../../../design/aie_src/aiesim_data/data/0_1/matA_in_64plio.txt", 64, "int32"),
-    ("plin2", "../../../design/aie_src/aiesim_data/data/0_2/matA_in_64plio.txt", 64, "int32"),
-    ("plin3", "../../../design/aie_src/aiesim_data/data/0_3/matA_in_64plio.txt", 64, "int32"),
-    ("plin5", "../../../design/aie_src/aiesim_data/data/0_5/matA_in_64plio.txt", 64, "int32"),
+    ("plin1", f"{args.input_dir}/data/0_1/matA_in_64plio.txt", 64, "int32"),
+    ("plin2", f"{args.input_dir}/data/0_2/matA_in_64plio.txt", 64, "int32"),
+    ("plin3", f"{args.input_dir}/data/0_3/matA_in_64plio.txt", 64, "int32"),
+    ("plin5", f"{args.input_dir}/data/0_5/matA_in_64plio.txt", 64, "int32"),
   ]
 
   slave_list = [
-    ("plout1", "./x86simulator_output/output01.txt", 64, "int32"), 
-    ("plout2", "./x86simulator_output/output02.txt", 64, "int32"), 
-    ("plout4", "./x86simulator_output/output04.txt", 64, "int32"),
+    ("plout1", f"{args.output_dir}/output01.txt", 64, "int32"), 
+    ("plout2", f"{args.output_dir}/output02.txt", 64, "int32"), 
+    ("plout4", f"{args.output_dir}/output04.txt", 64, "int32"),
   ]
   
   design = ExternalTraffic(master_list, slave_list)
