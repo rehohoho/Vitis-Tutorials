@@ -98,8 +98,12 @@ class ExternalTraffic:
         payload.tlast = True
 
         format_string = get_format_string(payload.data_length)
-        payload.data = bytes(bytearray(struct.pack(format_string, *tuple(packet))))
-        transport(payload)
+        try:
+          payload.data = bytes(bytearray(struct.pack(format_string, *tuple(packet))))
+          transport(payload)
+        except Exception as e:
+          logging.info(f"[{ipc_name}]: {e}")
+          logging.info(f"[{ipc_name}]: {format_string} {packet} {file_path} {line} {i}")
 
   def recv_fr_aie(self,
                   ipc_name: str,
@@ -108,12 +112,17 @@ class ExternalTraffic:
                   child: Any): # mp.connection.Connection
     """Receiving data from AIE to memory"""
     get_format_string = get_format_string_callable(dtype)
+    rxData = []
 
-    payload = ipc_slave.sample_transaction()
-    
-    # See https://docs.python.org/3/library/struct.html#format-characters
-    formatString = get_format_string(len(payload.data))
-    rxData = struct.unpack(formatString, payload.data)
+    while True:
+      try:
+        payload = ipc_slave.sample_transaction()
+      except:
+        break
+      
+      formatString = get_format_string(len(payload.data))
+      rxData += struct.unpack(formatString, payload.data)
+      
     child.send(rxData)
 
   def run(self):
