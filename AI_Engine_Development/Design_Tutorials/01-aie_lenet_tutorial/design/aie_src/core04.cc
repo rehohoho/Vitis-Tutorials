@@ -16,7 +16,6 @@ limitations under the License. */
 #include <stdio.h>
 #include <adf.h>
 #include "aie_api/aie.hpp"
-#include <adf/x86sim/x86simDebug.h>
 
 #include "core04.h"
 
@@ -68,36 +67,26 @@ void core04(
 	// for (z=0; z<RowA_tile/2; z++) chess_loop_range(2,)
 	for (z=0; z<RowA_tile; z+=2) chess_loop_range(2,)
 	{
-  	printf("%s:%s a1\n", __FILE__, X86SIM_KERNEL_NAME);
 		//********** Output vector ********/
 		int8_t * __restrict pC1 = C_out + (      z * ColB_tile +       0) * sizeTileC;
 		int8_t * __restrict pC2 = C_out + ((z + 1) * ColB_tile +       0) * sizeTileC;
-  	printf("%s:%s a2\n", __FILE__, X86SIM_KERNEL_NAME);
 
 		for (j=0; j<ColB_tile; j+=2) chess_loop_range(2,)
 		{		   	  	
-  		printf("%s:%s b1\n", __FILE__, X86SIM_KERNEL_NAME);
 			const int8_t * __restrict pA1 = A_04 + (      z * ColA_tile +       0) * sizeTileA;
 			const int8_t * __restrict pA2 = A_04 + ((z + 1) * ColA_tile +       0) * sizeTileA;
 			const int8_t * __restrict pB1 = B04 + (      0 * ColB_tile +       j) * sizeTileB;
 			const int8_t * __restrict pB2 = B04 + (      0 * ColB_tile + (j + 1)) * sizeTileB;
-  		printf("%s:%s b2 %d %d %d %d\n", __FILE__, X86SIM_KERNEL_NAME,
-				(      z * ColA_tile +       0) * sizeTileA,
-				((z + 1) * ColA_tile +       0) * sizeTileA,
-				(      0 * ColB_tile +       j) * sizeTileB,
-				(      0 * ColB_tile + (j + 1)) * sizeTileB);
 
 			aie::vector<int8_t, sizeTileA> A0 = aie::load_v<sizeTileA>(pA1); pA1 += sizeTileA;
 			aie::vector<int8_t, sizeTileA> A1 = aie::load_v<sizeTileA>(pA2); pA2 += sizeTileA;
 			aie::vector<int8_t, sizeTileB> B0 = aie::load_v<sizeTileB>(pB1); pB1 += sizeTileB * ColB_tile;
 			aie::vector<int8_t, sizeTileB> B1 = aie::load_v<sizeTileB>(pB2); pB2 += sizeTileB * ColB_tile;
-  		printf("%s:%s b3\n", __FILE__, X86SIM_KERNEL_NAME);
 
 			MMUL C00; C00.mul(A0, B0);
 			MMUL C01; C01.mul(A0, B1);
 			MMUL C10; C10.mul(A1, B0);
 			MMUL C11; C11.mul(A1, B1);
-  		printf("%s:%s b4\n", __FILE__, X86SIM_KERNEL_NAME);
 
 			for (i = 1; i < ColA_tile; ++i) chess_prepare_for_pipelining chess_loop_range(3,) {
 				A0 = aie::load_v<sizeTileA>(pA1); pA1 += sizeTileA;
@@ -109,7 +98,6 @@ void core04(
 				C10.mac(A1, B0);
 				C11.mac(A1, B1);
 			}
-  		printf("%s:%s b5\n", __FILE__, X86SIM_KERNEL_NAME);
 			//******will require rearrangement of output*************//
 			//*************bsrs and shift****************************//
 			aie::store_v(pC1, C00.template to_vector<int8_t>(shift)); pC1 += sizeTileC;
@@ -119,7 +107,6 @@ void core04(
 		}
 	
 	}
-	printf("%s:%s c\n", __FILE__, X86SIM_KERNEL_NAME);
 }
 
 void core04_top(input_window_int32 *inA1, input_window_int32 *inA2, output_window_int32 *out){
