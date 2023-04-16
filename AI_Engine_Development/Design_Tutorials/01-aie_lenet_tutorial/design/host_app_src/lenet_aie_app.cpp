@@ -24,9 +24,9 @@ limitations under the License. */
 
 #include "graph.cpp"
 
-#include "xrt/experimental/xrt_aie.h"
-#include "xrt/experimental/xrt_kernel.h"
-#include "xrt/experimental/xrt_bo.h"
+#include "experimental/xrt_aie.h"
+#include "experimental/xrt_kernel.h"
+#include "experimental/xrt_bo.h"
 
 #include "adf/adf_api/XRTConfig.h"
 
@@ -87,7 +87,6 @@ int main(int argc, char ** argv)
    const char* xclbinFilename = argv[1];
    
    int16_t iterCnt = 0;
-   int32_t GRAPH_ITER_CNT = 0;
    if(argc == 3) {
       std::string iter = argv[2];
       iterCnt = stoi(iter);
@@ -98,18 +97,12 @@ int main(int argc, char ** argv)
    
    printf("Iteration : %d...\n", iterCnt);
 
-   //Data
-   if (iterCnt == -1)
-      GRAPH_ITER_CNT = -1;
-   
-   else
-      GRAPH_ITER_CNT = (100 * iterCnt);
-
    auto dhdl = xrtDeviceOpen(0);
    auto xclbin = load_xclbin(dhdl, xclbinFilename);
    auto top = reinterpret_cast<const axlf*>(xclbin.data());
 
-  //Allocate BOs (buffer objects) of requested size with appropriate flags
+#ifndef EXTERNAL_IO
+   //Allocate BOs (buffer objects) of requested size with appropriate flags
    //Memory map BOs into user's address space (DDR Memory)
    xrtBufferHandle in_bohdl = xrtBOAlloc(dhdl, input_size_in_bytes, 0, 0);
    auto in_bomapped = reinterpret_cast<uint32_t*>(xrtBOMap(in_bohdl));
@@ -140,30 +133,39 @@ int main(int argc, char ** argv)
    //Moving data from DDR to AI Engine  
    xrtRunStart(dmahls_rhdl);
    printf("Run Datamover\n");
+#endif
    
    //////////////////////////////////////////
    // graph execution for AIE
    //////////////////////////////////////////	
    
    adf::registerXRT(dhdl, top->m_header.uuid);
-   
-   auto graphHandle = xrtGraphOpen(dhdl, top->m_header.uuid, "g");
-   if (!graphHandle) {
-      throw std::runtime_error("Unable to open graph handle");
-      return 1;
+   simGraph.init();
+   printf("Graph init done\n");
+
+	adf::return_code ret;
+#ifndef EXTERNAL_IO
+   ret = simGraph.run(iterCnt * 100);
+   printf("Graph run for %d iterations done\n", iterCnt * 100);
+   printf("\n");
+#else
+   ret = simGraph.run(1);
+   printf("Graph run done\n");
+#endif
+   if (ret != adf::ok) {
+      printf("Run failed\n");
+      return ret;
    }
-   
-   printf("graph run\n");    
-   int ret = xrtGraphReset(graphHandle);
-   ret = xrtGraphRun(graphHandle, GRAPH_ITER_CNT);
-   if (ret) {
-      throw std::runtime_error("Unable to run graph");
-      
-      return 1;
+
+   ret = simGraph.end();
+   if (ret != adf::ok) {
+      printf("End failed\n");
+      return ret;
    }
+   printf("Graph end done\n");
    
-   printf("graph running...\n");
    
+#ifndef EXTERNAL_IO
    //Wait for DMA HLS execution to finish
    printf("Waiting for dma hls to complete...\n");
    auto state = xrtRunWait(dmahls_rhdl);
@@ -212,15 +214,15 @@ int main(int argc, char ** argv)
    std::cout << "Releasing remaining XRT objects...\n";
    xrtBOFree(in_bohdl);
    xrtBOFree(out_bohdl);
-   
-   xrtGraphClose(graphHandle);
-   printf("graph end\n");
+#endif
    
    xrtDeviceClose(dhdl);
    
+#ifndef EXTERNAL_IO
    std::cout << "TEST " << (errCnt ? "FAILED" : "PASSED") << std::endl;
-   
    return (errCnt ? EXIT_FAILURE :  EXIT_SUCCESS);
-
-  
+#else
+   return 0;
+#endif
+   
 }

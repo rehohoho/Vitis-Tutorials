@@ -113,6 +113,7 @@ class ExternalTraffic:
     """Receiving data from AIE to memory"""
     get_format_string = get_format_string_callable(dtype)
     rxData = []
+    lines = 0
 
     while True:
       try:
@@ -122,6 +123,9 @@ class ExternalTraffic:
       
       formatString = get_format_string(len(payload.data))
       rxData += struct.unpack(formatString, payload.data)
+      logging.info(f"[{ipc_name}]: read lines #{lines}")
+      
+      lines += 1
       
     child.send(rxData)
 
