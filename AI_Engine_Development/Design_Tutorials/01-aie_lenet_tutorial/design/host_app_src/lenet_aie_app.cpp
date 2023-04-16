@@ -27,6 +27,7 @@ limitations under the License. */
 #include "experimental/xrt_aie.h"
 #include "experimental/xrt_kernel.h"
 #include "experimental/xrt_bo.h"
+#include "experimental/xrt_error.h"
 
 #include "adf/adf_api/XRTConfig.h"
 
@@ -97,6 +98,7 @@ int main(int argc, char ** argv)
    
    printf("Iteration : %d...\n", iterCnt);
 
+   auto deviceIdx = xrt::device(0);
    auto dhdl = xrtDeviceOpen(0);
    auto xclbin = load_xclbin(dhdl, xclbinFilename);
    auto top = reinterpret_cast<const axlf*>(xclbin.data());
@@ -137,33 +139,41 @@ int main(int argc, char ** argv)
    
    //////////////////////////////////////////
    // graph execution for AIE
-   //////////////////////////////////////////	
+   //////////////////////////////////////////
    
    adf::registerXRT(dhdl, top->m_header.uuid);
-   simGraph.init();
-   printf("Graph init done\n");
+   adf::return_code ret;
 
-	adf::return_code ret;
+   try {
+      simGraph.init();
+      if (ret != adf::ok)
+         printf("Init failed\n");
+      else
+         printf("Graph init done\n");
 #ifndef EXTERNAL_IO
-   ret = simGraph.run(iterCnt * 100);
-   printf("Graph run for %d iterations done\n", iterCnt * 100);
-   printf("\n");
+      ret = simGraph.run(iterCnt * 100);
 #else
-   ret = simGraph.run(1);
-   printf("Graph run done\n");
+      ret = simGraph.run(1);
 #endif
-   if (ret != adf::ok) {
-      printf("Run failed\n");
-      return ret;
+      if (ret != adf::ok)
+         printf("Run failed\n");
+      else
+         printf("Graph run done\n");
+      
+      ret = simGraph.end();
+      if (ret != adf::ok)
+         printf("End failed\n");
+      else
+         printf("Graph end done\n");
    }
 
-   ret = simGraph.end();
-   if (ret != adf::ok) {
-      printf("End failed\n");
-      return ret;
+   catch (const std::system_error& ex) {
+      xrt::error error(deviceIdx, XRT_ERROR_CLASS_AIE);
+      auto errCode = error.get_error_code();
+      auto timestamp = error.get_timestamp();
+      auto err_str = error.to_string();
+      std::cout << timestamp << " error code:" << errCode << " Error:" << err_str << std::endl;
    }
-   printf("Graph end done\n");
-   
    
 #ifndef EXTERNAL_IO
    //Wait for DMA HLS execution to finish
