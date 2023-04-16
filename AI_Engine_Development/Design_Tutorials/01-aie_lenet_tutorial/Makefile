@@ -188,13 +188,10 @@ XSA := vck190_$(APP_OBJ_NAME).$(TARGET).xsa
 # =========================================================
 # Graph Source files repository
 # ========================================================
-GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph.cpp
 
 # =========================================================
 # Application Source Files repository
 # =========================================================
-APP_SRC_CPP 	 := $(HOST_APP_SRC_REPO)/lenet_aie_app.cpp
-AIE_CONTROL_CPP := $(BUILD_TARGET_DIR)/$(WORK_DIR)/ps/c_rts/aie_control_xrt.cpp
 
 # =========================================================
 # AIE Compiler Global Settings and Include Libraries
@@ -202,28 +199,6 @@ AIE_CONTROL_CPP := $(BUILD_TARGET_DIR)/$(WORK_DIR)/ps/c_rts/aie_control_xrt.cpp
 # =========================================================
 # Application Compiler and Linker Flags
 # =========================================================
-GCC_FLAGS := -O
-GCC_FLAGS += -c
-GCC_FLAGS += -std=c++17
-GCC_FLAGS += -D__linux__
-GCC_FLAGS += -D__PS_ENABLE_AIE__
-GCC_FLAGS += -DXAIE_DEBUG
-GCC_FLAGS += -DITER_CNT=$(ITER_CNT)
-GCC_FLAGS += -DLENET_INSTS=$(LENET_INSTS)
-
-GCC_INC_FLAGS := -I$(SDKTARGETSYSROOT)/usr/include/xrt
-GCC_INC_FLAGS += -I$(XILINX_VITIS)/aietools/include/
-GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include 
-GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/lib
-GCC_INC_FLAGS += -I$(AIE_SRC_REPO)
-GCC_INC_FLAGS += -I$(HOST_APP_SRC_REPO)
-
-GCC_INC_LIB := -L$(SDKTARGETSYSROOT)/usr/lib 
-GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/aarch64.o 
-GCC_INC_LIB += -L$(XILINX_VITIS)/aietools/lib/lnx64.o
-
-GCC_INC_LIB += -ladf_api_xrt 
-GCC_INC_LIB += -lxrt_coreutil 
 
 # =========================================================
 # Kernel Compiler and Linker Flags
@@ -232,31 +207,6 @@ GCC_INC_LIB += -lxrt_coreutil
 # =========================================================
 # Packaging Flags
 # ========================================================
-PKG_FLAGS := -t $(TARGET)
-PKG_FLAGS += --save-temps
-PKG_FLAGS += --temp_dir $(BUILD_TARGET_DIR)/_x
-PKG_FLAGS += -f $(PLATFORM)
-PKG_FLAGS += --package.rootfs $(COMMON_IMAGE_VERSAL)/rootfs.ext4
-PKG_FLAGS += --package.kernel_image $(COMMON_IMAGE_VERSAL)/Image
-PKG_FLAGS += --package.boot_mode=sd
-PKG_FLAGS += --package.out_dir $(EMBEDDED_PACKAGE_OUT)
-PKG_FLAGS += --package.image_format=ext4
-PKG_FLAGS += --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF) $(BUILD_TARGET_DIR)/$(XSA) $(LIBADF_A)
-PKG_FLAGS += --package.sd_file $(EXEC_SCRIPTS_REPO)/$(EMBEDDED_EXEC_SCRIPT)
-
-ifeq ($(EN_TRACE),1)
-   ifeq ($(TARGET),hw)
-      PKG_FLAGS += --package.sd_file $(PROFILING_CONFIGS_REPO)/xrt.ini
-   
-   endif
-endif
-
-ifdef XRT_ROOT
-   PKG_FLAGS += --package.sd_dir $(XRT_ROOT)
-
-endif
-
-PKG_FLAGS += --package.defer_aie_run
 
 # =========================================================
 # Step 1. Kernel XO File Generation
@@ -285,7 +235,7 @@ VPP_FLAGS := --platform $(PLATFORM) \
 
 DATAMOVER_KERNEL_SRC := $(PL_SRC_REPO)/datamover/$(DATAMOVER_KERNEL_TOP).cpp
 
-ifeq (${EXTIO}, true)
+ifeq ($(EXTIO), true)
 	KERNEL_XOS := $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_master_$(TRAFFICGEN_WIDTH).xo \
 								$(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_slave_$(TRAFFICGEN_WIDTH).xo
 else
@@ -315,6 +265,8 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 #	NOC_Power.xpe
 #	Work/ 
 #	xnwOut/
+GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph.cpp
+
 AIE_FLAGS := -include=$(AIE_SRC_REPO) \
 						 -include=$(AIE_SRC_REPO)/data \
 						 --verbose \
@@ -326,10 +278,10 @@ AIE_FLAGS := -include=$(AIE_SRC_REPO) \
 						 --dataflow \
 						 --heapsize=2048 \
 						 --workdir=$(WORK_DIR)
-ifeq (${TARGET}, sw_emu)
+ifeq ($(TARGET), sw_emu)
 	AIE_FLAGS += --target=x86sim --Xpreproc=-O0
 endif
-ifeq (${EXTIO}, true)
+ifeq ($(EXTIO), true)
 	AIE_FLAGS += --Xpreproc=-DEXTERNAL_IO
 endif
 #AIE_FLAGS += --test-iterations=100 
@@ -355,8 +307,8 @@ AIE_SIM_FLAGS := --pkg-dir=$(BUILD_TARGET_DIR)/$(WORK_DIR)/ \
 TRAFFIC_GEN_PY := $(DESIGN_REPO)/trafficgen/xtg_aie.py
 
 aiesim: graph
-ifeq (${EXTIO}, false)
-ifeq (${TARGET}, sw_emu)
+ifeq ($(EXTIO), false)
+ifeq ($(TARGET), sw_emu)
 	cd $(BUILD_TARGET_DIR); \
 	x86simulator $(AIE_SIM_FLAGS) 2>&1 | tee -a x86sim_filetraffic.log
 else
@@ -364,12 +316,12 @@ else
 	aiesimulator $(AIE_SIM_FLAGS) 2>&1 | tee -a aiesim_filetraffic.log
 endif
 else  # Use External Traffic Generator
-ifeq (${TARGET}, sw_emu)
+ifeq ($(TARGET), sw_emu)
 	cd $(BUILD_TARGET_DIR); \
-	x86simulator $(AIE_SIM_FLAGS) & python3 ${TRAFFIC_GEN_PY} --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./x86simulator_output
+	x86simulator $(AIE_SIM_FLAGS) & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./x86simulator_output
 else
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) & python3 ${TRAFFIC_GEN_PY} --input_dir .$(AIE_SRC_REPO)/aiesim_data --output_dir ./aiesimulator_output
+	aiesimulator $(AIE_SIM_FLAGS) & python3 $(TRAFFIC_GEN_PY) --input_dir .$(AIE_SRC_REPO)/aiesim_data --output_dir ./aiesimulator_output
 endif
 endif
 
@@ -403,16 +355,16 @@ $(BLD_TGT_VCD_FILE):
 #	vck190_aie_lenet.[hw_emu | hw].xsa.link_summary
 #	vck190_aie_lenet.[hw_emu | hw].xsa
 #	vck190_aie_lenet.[hw_emu | hw].log
-VPP_LINK_FLAGS := --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0 \
-                  --clock.freqHz $(VPP_CLOCK_FREQ):$(LENET_KERNEL_TOP)_0 \
-                  --clock.defaultTolerance 0.001 \
+VPP_LINK_FLAGS := --clock.defaultTolerance 0.001 \
                   --advanced.param compiler.userPostSysLinkOverlayTcl=$(DIRECTIVES_REPO)/noc_qos.tcl \
                   --vivado.prop run.synth_1.STEPS.SYNTH_DESIGN.ARGS.CONTROL_SET_OPT_THRESHOLD=16
 
-ifeq (${EXTIO}, true)
+ifeq ($(EXTIO), true)
 	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS)_etg.cfg
 else
-	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS).cfg
+	VPP_LINK_FLAGS += --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0 \
+										--clock.freqHz $(VPP_CLOCK_FREQ):$(LENET_KERNEL_TOP)_0 \
+										--config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS).cfg
 endif
 
 ifeq ($(EN_TRACE),1)
@@ -447,13 +399,54 @@ $(BUILD_TARGET_DIR)/$(XSA):$(KERNEL_XOS) $(LIBADF_A) $(SYSTEM_CONFIGS_REPO)/*
 # 	aie_control.o
 #	lenet_app.o 
 # 	lenet_xrt.elf
+APP_SRC_CPP 	 := $(HOST_APP_SRC_REPO)/lenet_aie_app.cpp
+AIE_CONTROL_CPP := $(BUILD_TARGET_DIR)/$(WORK_DIR)/ps/c_rts/aie_control_xrt.cpp
+
+GCC_FLAGS := -O \
+             -c \
+             -std=c++17 \
+             -D__linux__ \
+             -D__PS_ENABLE_AIE__ \
+             -DXAIE_DEBUG \
+             -DITER_CNT=$(ITER_CNT) \
+             -DLENET_INSTS=$(LENET_INSTS)
+
+GCC_INC_FLAGS := -I$(XILINX_VITIS)/aietools/include/ \
+                 -I$(AIE_SRC_REPO) \
+                 -I$(HOST_APP_SRC_REPO)
+
+GCC_INC_LIB := -ladf_api_xrt \
+               -lxrt_coreutil 
+
+ifeq ($(EXTIO), true)
+GCC_FLAGS += -DEXTERNAL_IO
+endif
+
+ifeq ($(TARGET), sw_emu)
+CXX := g++
+GCC_FLAGS += -D__SYNCBO_ENABLE__
+GCC_INC_FLAGS += -I${XILINX_X86_XRT}/include
+GCC_INC_LIB += -L${XILINX_X86_XRT}/lib \
+								-L$(XILINX_VITIS)/aietools/lib/lnx64.o \
+								-pthread \
+								-lxrt_core
+else
+GCC_INC_FLAGS += -I$(SDKTARGETSYSROOT)/usr/include/xrt \
+								 -I$(SDKTARGETSYSROOT)/usr/include \
+								 -I$(SDKTARGETSYSROOT)/usr/lib
+
+GCC_INC_LIB += -L$(SDKTARGETSYSROOT)/usr/lib \
+							 -L$(XILINX_VITIS)/aietools/lib/aarch64.o \
+							 -L$(XILINX_VITIS)/aietools/lib/lnx64.o
+endif
+
 application: graph $(BUILD_TARGET_DIR)/$(APP_ELF)
 
 $(BUILD_TARGET_DIR)/$(APP_ELF): $(HOST_APP_SRC)/* $(LIBADF_A)
 	@rm -rf $(BUILD_TARGET_DIR)/app_control.o $(BUILD_TARGET_DIR)/$(APP_OBJ_NAME)_app.o $(BUILD_TARGET_DIR)/$(APP_ELF)
 	$(CXX) $(GCC_FLAGS) $(GCC_INC_FLAGS) $(AIE_CONTROL_CPP) -o $(BUILD_TARGET_DIR)/app_control.o
-	$(CXX) $(GCC_FLAGS) $(GCC_INC_FLAGS) $(APP_SRC_CPP) -o $(BUILD_TARGET_DIR)/$(APP_OBJ_NAME)_app.o $(GCC_INC_LIB) $(GCC_LIB)
-	$(CXX) $(BUILD_TARGET_DIR)/app_control.o $(BUILD_TARGET_DIR)/$(APP_OBJ_NAME)_app.o $(GCC_INC_LIB) $(GCC_LIB) -o $(BUILD_TARGET_DIR)/$(APP_ELF)
+	$(CXX) $(GCC_FLAGS) $(GCC_INC_FLAGS) $(APP_SRC_CPP) -o $(BUILD_TARGET_DIR)/$(APP_OBJ_NAME)_app.o $(GCC_INC_LIB)
+	$(CXX) $(BUILD_TARGET_DIR)/app_control.o $(BUILD_TARGET_DIR)/$(APP_OBJ_NAME)_app.o $(GCC_INC_LIB) -o $(BUILD_TARGET_DIR)/$(APP_ELF)
 
 # =========================================================
 # Step 5. Package Generation  
@@ -466,6 +459,35 @@ $(BUILD_TARGET_DIR)/$(APP_ELF): $(HOST_APP_SRC)/* $(LIBADF_A)
 # 	package/ directory
 # 	v++.package_summary
 # 	v++_package.log 
+PKG_FLAGS := -t $(TARGET) \
+             --save-temps \
+             --temp_dir $(BUILD_TARGET_DIR)/_x \
+             -f $(PLATFORM) \
+						 --package.defer_aie_run \
+						 $(BUILD_TARGET_DIR)/$(XSA) $(LIBADF_A)
+
+ifeq ($(TARGET), sw_emu)
+PKG_FLAGS += -o $(BUILD_TARGET_DIR)/a.xclbin
+else
+PKG_FLAGS += --package.rootfs $(COMMON_IMAGE_VERSAL)/rootfs.ext4 \
+             --package.kernel_image $(COMMON_IMAGE_VERSAL)/Image \
+             --package.boot_mode=sd \
+             --package.out_dir $(EMBEDDED_PACKAGE_OUT) \
+             --package.image_format=ext4 \
+             --package.sd_file $(BUILD_TARGET_DIR)/$(APP_ELF) \
+             --package.sd_file $(EXEC_SCRIPTS_REPO)/$(EMBEDDED_EXEC_SCRIPT)
+endif
+
+ifeq ($(EN_TRACE),1)
+   ifeq ($(TARGET),hw)
+      PKG_FLAGS += --package.sd_file $(PROFILING_CONFIGS_REPO)/xrt.ini
+   endif
+endif
+
+ifdef XRT_ROOT
+   PKG_FLAGS += --package.sd_dir $(XRT_ROOT)
+endif
+
 package: application xsa $(EMBEDDED_PACKAGE_OUT)
 
 $(EMBEDDED_PACKAGE_OUT): $(PROFILING_CONFIGS_REPO)/* $(EXEC_SCRIPTS_REPO)/* $(ALL_APP_ELFS)
@@ -482,11 +504,34 @@ $(EMBEDDED_PACKAGE_OUT): $(PROFILING_CONFIGS_REPO)/* $(EXEC_SCRIPTS_REPO)/* $(AL
 # instructions in the README.md
 run_emu:
 ifeq ($(TARGET),hw_emu)
+
+ifeq ($(EXTIO), true)
 	cd $(EMBEDDED_PACKAGE_OUT); \
-	./launch_hw_emu.sh -run-app $(EMBEDDED_EXEC_SCRIPT) -no-reboot -timeout 4000 | tee embedded_run.log
+	python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./ & \
+	./launch_hw_emu.sh -run-app $(EMBEDDED_EXEC_SCRIPT) -no-reboot | tee embedded_run.log
+else
+	cd $(EMBEDDED_PACKAGE_OUT); \
+	./launch_hw_emu.sh -run-app $(EMBEDDED_EXEC_SCRIPT) -no-reboot | tee embedded_run.log
+endif
+
 else # sw_emu
-	cd $(EMBEDDED_PACKAGE_OUT); \
-	./launch_sw_emu.sh -run-app $(EMBEDDED_EXEC_SCRIPT) -no-reboot -timeout 4000 | tee embedded_run.log
+
+ifeq ($(EXTIO), true)
+	cd $(BUILD_TARGET_DIR); \
+	export XILINX_XRT=$(XILINX_X86_XRT); \
+	export XCL_EMULATION_MODE=sw_emu; \
+	export LD_LIBRARY_PATH=${XILINX_X86_XRT}/lib; \
+	./$(APP_ELF) a.xclbin & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./x86simulator_output; \
+	unset LD_LIBRARY_PATH
+else
+	cd $(BUILD_TARGET_DIR); \
+	export XILINX_XRT=${XILINX_X86_XRT}; \
+	export XCL_EMULATION_MODE=sw_emu; \
+	export LD_LIBRARY_PATH=${XILINX_X86_XRT}/lib; \
+	./$(APP_ELF) a.xclbin; \
+	unset LD_LIBRARY_PATH
+endif
+
 endif
 
 # =========================================================
