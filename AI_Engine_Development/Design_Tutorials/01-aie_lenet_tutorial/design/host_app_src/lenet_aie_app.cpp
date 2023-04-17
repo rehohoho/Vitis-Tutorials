@@ -22,7 +22,7 @@ limitations under the License. */
 #include "input.h"
 #include "golden.h"
 
-#include "graph.cpp"
+#include "graph.h"
 
 #include "experimental/xrt_aie.h"
 #include "experimental/xrt_kernel.h"
@@ -144,27 +144,22 @@ int main(int argc, char ** argv)
    adf::registerXRT(dhdl, top->m_header.uuid);
    adf::return_code ret;
 
+   SimGraph simGraph;
+
    try {
-      simGraph.init();
-      if (ret != adf::ok)
-         printf("Init failed\n");
-      else
-         printf("Graph init done\n");
+      adfCheck(simGraph.init(), "init graph");
+
 #ifndef EXTERNAL_IO
-      ret = simGraph.run(iterCnt * 100);
+      get_graph_latency(simGraph, "plin1/plout1", simGraph.plin1, simGraph.plout1, iterCnt*100);
+      get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, PLIN1_LEN, sizeof(int32), iterCnt*100);
+      get_graph_throughput_by_port(simGraph, "plout1", simGraph.plout1, PLOUT1_LEN, sizeof(int32), iterCnt*100);
 #else
-      ret = simGraph.run(1);
+      get_graph_latency(simGraph, "plin1/plout1", simGraph.plin1, simGraph.plout1, iterCnt);
+      get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, PLIN1_LEN, sizeof(int32), iterCnt);
+      get_graph_throughput_by_port(simGraph, "plout1", simGraph.plout1, PLOUT1_LEN, sizeof(int32), iterCnt);
 #endif
-      if (ret != adf::ok)
-         printf("Run failed\n");
-      else
-         printf("Graph run done\n");
       
-      ret = simGraph.end();
-      if (ret != adf::ok)
-         printf("End failed\n");
-      else
-         printf("Graph end done\n");
+      adfCheck(simGraph.end(), "end graph");
    }
 
    catch (const std::system_error& ex) {
