@@ -17,75 +17,30 @@ help::
 	@echo  ""
 	@echo  " Makefile Usage:"
 	@echo  ""
-	@echo  "  make sd_card"
-	@echo  "  Command calls rules: kernels graph xsa application package, in sequence"
-	@echo  "  Default TARGET is hw_emu"
-	@echo  ""
-	@echo  "  make run"
-	@echo  "  Command calls rules: sd_card run_emu, in sequence"
-	@echo  "  Default TARGET is hw_emu"
-	@echo  ""
-	@echo  "  make all"
-	@echo  "  Command calls rules: sd_card report_metrics vcd run_emu, in sequence"
-	@echo  "  Default TARGET is hw_emu"
-	@echo  ""
-	@echo  "  make kernels"
-	@echo  "  Command to generate the PL kernels"
-	@echo  "  Default TARGET is hw_emu"
-	@echo  ""
-	@echo  "  make graph"
-	@echo  "  Command to generate the AI Engine graph"
-	@echo  ""
-	@echo  "  make aiesim"
-	@echo  "  Command to run aie simulator for the AI Engine graph"
-	@echo  ""
-	@echo  "  make aiesim_profile"
-	@echo  "  Command to run aie simulator for the AI Engine graph and enable kernel print statements"
-	@echo  ""
-	@echo  "  make vcd"
-	@echo  "  Command to run aie simulator for the AI Engine graph and create the vcd and xpe file for the same"
-	@echo  ""
-	@echo  "  make xsa"
-	@echo  "  Command to generate the xsa for specified target"
-	@echo  "  Default TARGET is hw_emu"
-	@echo  ""
-	@echo  "  make application"
-	@echo  "  Command to generate the A72 application"
-	@echo  ""
-	@echo  "  make package"
-	@echo  "  Command to package design into an sd_card for specified target"
-	@echo  "  Default TARGET is hw_emu"
-	@echo  ""
-	@echo  "  make run_emu"
-	@echo  "  Command to run the hw emulator"
-	@echo  "  Default TARGET is hw_emu"
-	@echo  ""
-	@echo  "  make report_metrics"
-	@echo  "  Command to run and get vivado utilisation and power reports."
-	@echo  "  Works only for TARGET=hw"
-	@echo  ""
-	@echo  "  make clean_target"
-	@echo  "  Command to remove the generated files for a specific target"
-	@echo  ""
-	@echo  "  make cleanall"
-	@echo  "  Command to remove the generated files for all variations"
-	@echo  ""
-	@echo  "  make clean_vivado_reports"
-	@echo  "  Command to remove the generated vivado reports files for all variations"
-	@echo  ""
-	@echo  "  make clean_xpe_reports"
-	@echo  "  Command to remove the generated xpe files for all variations"
-	@echo  ""
-	@echo  "  make cleanall_reports"
-	@echo  "  Command to remove all the generated reports for all variations"
-	@echo  ""
 	@echo  " OPTIONS:"
 	@echo  " Use the make recipes with required values for options mentioned below-"
-	@echo  "    TARGET             -specifies target: Hardware or Emulation. Values: hw_emu(default), hw"
-	@echo  "    LENET_INSTS        -specifies number of LENET instances. Values: 1(default), 5 and 50"
-	@echo  "    PL_FREQ        	 -specifies HLS kernel frequencies. Values: 250Mhz(default)"
-	@echo  "    ITER_CNT           -specifies design iteration count: Values: 8(default)"
-	@echo  "    EN_TRACE           -specifies whether to enable profiling for the design. Values: 0(disabled, default) and 1(enabled)"
+	@echo  "    TARGET             sw_emu (default) | hw_emu | hw,  build target"
+	@echo  "    EXTIO              true (default) | false,          traffic gen usage"
+	@echo  "    LENET_INSTS        1 (default) | 5 | 50"
+	@echo  "    PL_FREQ            250Mhz (default),                HLS kernel frequencies"
+	@echo  "    ITER_CNT           8 (default),                     design iteration count"
+	@echo  "    EN_TRACE           0 (default) | 1,                 enable profiling .ini (hw)"
+	@echo  ""
+	@echo  " Runs in x86simulator / x86 threads. Functional only, no profiling."
+	@echo  "  TARGET=sw_emu EXTIO=false make kernels graph aiesim"
+	@echo  "  TARGET=sw_emu EXTIO=false make kernels graph xsa application package run_emu"
+	@echo  "  TARGET=sw_emu EXTIO=true make kernels graph aiesim"
+	@echo  "  TARGET=sw_emu EXTIO=true make kernels graph xsa application package run_emu"
+	@echo  "  TARGET=sw_emu make clean clean_reports clean_xpe"
+	@echo  ""
+	@echo  " Runs in aiesimulator / QEMU. Profiling ok."
+	@echo  "  TARGET=hw_emu EXTIO=false make kernels graph aiesim"
+	@echo  "  TARGET=hw_emu EXTIO=false make kernels graph xsa application package run_emu"
+	@echo  "  TARGET=hw_emu EXTIO=true make kernels graph aiesim"
+	@echo  "  TARGET=hw_emu EXTIO=true make kernels graph xsa application package run_emu"
+	@echo  "  TARGET=hw_emu make clean clean_reports clean_xpe"
+	@echo  ""
+	@echo  " Other build options: aiesim_profile, vcd, run, all, report_metrics"
 	@echo  ""
 
 # Print all options passed to Makefile
@@ -150,7 +105,7 @@ PROFILING_CONFIGS_REPO := $(DESIGN_REPO)/profiling_configs
 EXEC_SCRIPTS_REPO      := $(DESIGN_REPO)/exec_scripts
 VIVADO_METRICS_SCRIPTS_REPO := $(DESIGN_REPO)/vivado_metrics_scripts
 
-BASE_BLD_DIR   	:= $(PROJECT_REPO)/build
+BASE_BLD_DIR     	:= $(PROJECT_REPO)/build
 INSTS_BLD_DIR     := $(BASE_BLD_DIR)/lenet_x$(LENET_INSTS)
 BUILD_TARGET_DIR  := $(INSTS_BLD_DIR)/$(TARGET)
 
@@ -175,11 +130,6 @@ WORK_DIR := Work
 # Below are the names for SDF graph, application executable,
 # kernel executables, and xsa
 # ==========================================================
-LIBADF_A := $(BUILD_TARGET_DIR)/libadf.a
-
-APP_OBJ_NAME := lenet_aie
-APP_ELF := $(APP_OBJ_NAME)_xrt.elf
-XSA := vck190_$(APP_OBJ_NAME).$(TARGET).xsa
 
 # =========================================================
 # Kernel Source Files repository
@@ -265,6 +215,7 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 #	NOC_Power.xpe
 #	Work/ 
 #	xnwOut/
+LIBADF_A 			:= $(BUILD_TARGET_DIR)/libadf.a
 GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph.cpp
 
 AIE_FLAGS := -include=$(AIE_SRC_REPO) \
@@ -310,18 +261,18 @@ aiesim: graph
 ifeq ($(EXTIO), false)
 ifeq ($(TARGET), sw_emu)
 	cd $(BUILD_TARGET_DIR); \
-	x86simulator $(AIE_SIM_FLAGS) 2>&1 | tee -a x86sim_filetraffic.log
+	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output 2>&1 | tee -a x86sim_filetraffic.log
 else
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) 2>&1 | tee -a aiesim_filetraffic.log
+	aiesimulator $(AIE_SIM_FLAGS) -o $(BLD_REPORTS_DIR)/aiesimulator_output 2>&1 | tee -a aiesim_filetraffic.log
 endif
 else  # Use External Traffic Generator
 ifeq ($(TARGET), sw_emu)
 	cd $(BUILD_TARGET_DIR); \
-	x86simulator $(AIE_SIM_FLAGS) & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./x86simulator_output
+	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/x86simulator_output
 else
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) & python3 $(TRAFFIC_GEN_PY) --input_dir .$(AIE_SRC_REPO)/aiesim_data --output_dir ./aiesimulator_output
+	aiesimulator $(AIE_SIM_FLAGS) -o $(BLD_REPORTS_DIR)/aiesimulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/aiesimulator_output
 endif
 endif
 
@@ -355,6 +306,9 @@ $(BLD_TGT_VCD_FILE):
 #	vck190_aie_lenet.[hw_emu | hw].xsa.link_summary
 #	vck190_aie_lenet.[hw_emu | hw].xsa
 #	vck190_aie_lenet.[hw_emu | hw].log
+APP_OBJ_NAME := lenet_aie
+XSA := vck190_$(APP_OBJ_NAME).xsa
+
 VPP_LINK_FLAGS := --clock.defaultTolerance 0.001 \
                   --advanced.param compiler.userPostSysLinkOverlayTcl=$(DIRECTIVES_REPO)/noc_qos.tcl \
                   --vivado.prop run.synth_1.STEPS.SYNTH_DESIGN.ARGS.CONTROL_SET_OPT_THRESHOLD=16
@@ -399,7 +353,8 @@ $(BUILD_TARGET_DIR)/$(XSA):$(KERNEL_XOS) $(LIBADF_A) $(SYSTEM_CONFIGS_REPO)/*
 # 	aie_control.o
 #	lenet_app.o 
 # 	lenet_xrt.elf
-APP_SRC_CPP 	 := $(HOST_APP_SRC_REPO)/lenet_aie_app.cpp
+APP_ELF 				:= $(APP_OBJ_NAME)_xrt.elf
+APP_SRC_CPP 	  := $(HOST_APP_SRC_REPO)/lenet_aie_app.cpp
 AIE_CONTROL_CPP := $(BUILD_TARGET_DIR)/$(WORK_DIR)/ps/c_rts/aie_control_xrt.cpp
 
 GCC_FLAGS := -O \
@@ -506,8 +461,9 @@ run_emu:
 ifeq ($(TARGET),hw_emu)
 
 ifeq ($(EXTIO), true)
+	mkdir -p $(BLD_REPORTS_DIR)/aiesimulator_output; \
 	cd $(EMBEDDED_PACKAGE_OUT); \
-	python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./ & \
+	python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/aiesimulator_output 2>&1 | tee embedded_run_trafficgen.log & \
 	./launch_hw_emu.sh -run-app $(EMBEDDED_EXEC_SCRIPT) -no-reboot | tee embedded_run.log
 else
 	cd $(EMBEDDED_PACKAGE_OUT); \
@@ -517,19 +473,16 @@ endif
 else # sw_emu
 
 ifeq ($(EXTIO), true)
+	mkdir -p $(BLD_REPORTS_DIR)/x86simulator_output; \
 	cd $(BUILD_TARGET_DIR); \
 	export XILINX_XRT=$(XILINX_X86_XRT); \
 	export XCL_EMULATION_MODE=sw_emu; \
 	export LD_LIBRARY_PATH=${XILINX_X86_XRT}/lib; \
-	./$(APP_ELF) a.xclbin & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir ./x86simulator_output; \
+	./$(APP_ELF) a.xclbin 2>&1 | tee embedded_run.log & \
+	python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/x86simulator_output 2>&1 | tee embedded_run_trafficgen.log; \
 	unset LD_LIBRARY_PATH
 else
-	cd $(BUILD_TARGET_DIR); \
-	export XILINX_XRT=${XILINX_X86_XRT}; \
-	export XCL_EMULATION_MODE=sw_emu; \
-	export LD_LIBRARY_PATH=${XILINX_X86_XRT}/lib; \
-	./$(APP_ELF) a.xclbin; \
-	unset LD_LIBRARY_PATH
+	@echo "sw_emu without EXTIO is not possible since kernel requires hw | hw_emu"
 endif
 
 endif
@@ -555,46 +508,29 @@ endif
 
 # =========================================================
 # Primary Build Targets
-# ==> sd_card
 # ==> run
 # ==> all
-# ==> clean_target
-# ==> cleanall
-# ==> clean_vivado_reports
-# ==> clean_xpe_reports
-# ==> cleanall_reports
+# ==> clean
+# ==> clean_reports
+# ==> clean_xpe
 # ========================================================
 
-#Build the design without running the hardware emulation
-sd_card: package
-
 #Build the design and then run hardware emulation 
-run: sd_card run_emu
+run: package run_emu
 
 #Same as "run" above, but include metrics generation and
 #vcd generation
-all: run report_metrics vcd
+all: package run_emu report_metrics vcd
 
 #Clean generated files
-clean_target:
+clean:
 	@echo "Cleaning $(TARGET) Target Build Dir..."
 	rm -rf $(BUILD_TARGET_DIR)
 
-#Clean all builds...
-cleanall_blds:
-	rm -rf $(BASE_BLD_DIR)
-	rm -rf vivado* .Xil *.log vitis* core.*
-
 #Clean_all vivado reports...
-cleanall_vivado_reports:
-	rm -rf $(REPORTS_REPO)
+clean_reports:
+	rm -rf $(BLD_REPORTS_DIR)
 
 #Clean_all xpes...
-cleanall_xpe_reports:
+clean_xpe:
 	rm -rf $(XPE_REPO)
-
-#Clean_all reports...
-cleanall_reports: cleanall_vivado_reports cleanall_xpe_reports
-
-#Clean_all builds and reports...
-cleanall: cleanall_blds cleanall_reports
