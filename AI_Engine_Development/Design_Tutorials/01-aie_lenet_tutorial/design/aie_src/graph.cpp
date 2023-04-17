@@ -26,7 +26,7 @@ int main(int argc, char ** argv) {
   get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, PLIN1_LEN, sizeof(int32), ITER_CNT);
   get_graph_throughput_by_port(simGraph, "plout1", simGraph.plout1, PLOUT1_LEN, sizeof(int32), ITER_CNT);
 #else
-  adfCheck(simGraph.run(1), "run graph");
+  adfCheck(simGraph.run(ITER_CNT), "run graph");
 #endif
 
 	adfCheck(simGraph.end(), "end graph");
