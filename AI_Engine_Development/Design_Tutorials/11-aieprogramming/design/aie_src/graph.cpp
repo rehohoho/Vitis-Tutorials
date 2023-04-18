@@ -14,22 +14,28 @@ limitations under the License. */
 
 #include "graph.h"
 
-SimGraph simGraph;
+// instance to be compiled and used in host within xclbin
+ScalarMulGraph smul;
+VectorMulGraph vmul;
 
 
 #if defined(__AIESIM__) || defined(__X86SIM__)
 int main(int argc, char ** argv) {
-	adfCheck(simGraph.init(), "init graph");
-  
+	adfCheck(smul.init(), "init smul");
 #ifdef __AIESIM__
-  get_graph_latency(simGraph, "plin1/plout1", simGraph.plin1, simGraph.plout1, ITER_CNT);
-  get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, V_LEN, sizeof(int32), ITER_CNT);
-  get_graph_throughput_by_port(simGraph, "plout1", simGraph.plout1, V_LEN, sizeof(int32), ITER_CNT);
+  get_graph_throughput_by_port(smul, "plin1", smul.plin1, V_LEN, sizeof(int32), ITER_CNT);
 #else
-  adfCheck(simGraph.run(ITER_CNT), "run graph");
+  adfCheck(smul.run(1), "run smul");
 #endif
+	adfCheck(smul.end(), "end smul");
 
-	adfCheck(simGraph.end(), "end graph");
+  adfCheck(vmul.init(), "init vmul");
+#ifdef __AIESIM__
+  get_graph_throughput_by_port(vmul, "plin1", vmul.plin1, V_LEN, sizeof(int32), ITER_CNT);
+#else
+  adfCheck(vmul.run(1), "run vmul");
+#endif
+	adfCheck(vmul.end(), "end vmul");
   
   return 0;
 }

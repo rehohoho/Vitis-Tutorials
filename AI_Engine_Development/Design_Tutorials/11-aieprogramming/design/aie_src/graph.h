@@ -18,67 +18,71 @@
   } while (0)
 
 
-class LenetGraph : public adf::graph {
+class ScalarMulGraph : public adf::graph {
 
   private:
-    adf::kernel scalarMul;
-    adf::kernel vectorMul;
+    adf::kernel mul;
 
-  public:
-    adf::port<input> in[2];
-    adf::port<output> out[2];
-
-    LenetGraph() { 
-      scalarMul = adf::kernel::create(scalar_mul);
-      vectorMul = adf::kernel::create(vector_mul);
-
-      adf::source(scalarMul) = "mul.cc";
-      adf::source(vectorMul) = "mul.cc";
-
-      adf::connect<adf::window<V_LEN * 4>>(in[0], scalarMul.in[0]);
-      adf::connect<adf::window<V_LEN * 4>>(in[1], scalarMul.in[1]);
-      adf::connect<adf::window<V_LEN * 4>>(scalarMul.out[0], out[0]);
-      
-      adf::connect<adf::window<V_LEN * 4>>(in[0], vectorMul.in[0]);
-      adf::connect<adf::window<V_LEN * 4>>(in[1], vectorMul.in[1]);
-      adf::connect<adf::window<V_LEN * 4>>(vectorMul.out[0], out[1]);
-
-      adf::runtime<ratio>(scalarMul) = 0.6;
-      adf::runtime<ratio>(vectorMul) = 0.6;
-    }
-};
-
-class SimGraph: public adf::graph {
   public:
     adf::input_plio plin1;
     adf::input_plio plin2;
-    
     adf::output_plio plout1;
-    adf::output_plio plout2;
 
-    LenetGraph lenet;
+    ScalarMulGraph() { 
+      mul = adf::kernel::create(scalar_mul);
+      adf::source(mul) = "mul.cc";
 
-    SimGraph() {
 #ifdef EXTERNAL_IO
-      plin1 = adf::input_plio::create("plin1", adf::plio_64_bits);
-      plin2 = adf::input_plio::create("plin2", adf::plio_64_bits);
-
-      plout1 = adf::output_plio::create("plout1", adf::plio_64_bits);
-      plout2 = adf::output_plio::create("plout2", adf::plio_64_bits);
+      plin1 = adf::input_plio::create("smul_plin1", adf::plio_64_bits);
+      plin2 = adf::input_plio::create("smul_plin2", adf::plio_64_bits);
+      plout1 = adf::output_plio::create("smul_plout1", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("plin1", adf::plio_64_bits, "va.txt");
-      plin2 = adf::input_plio::create("plin2", adf::plio_64_bits, "vb.txt");
-
-      plout1 = adf::output_plio::create("plout1", adf::plio_64_bits, "output01.txt");
-      plout2 = adf::output_plio::create("plout2", adf::plio_64_bits, "output02.txt");
+      plin1 = adf::input_plio::create("smul_plin1", adf::plio_64_bits, "va.txt");
+      plin2 = adf::input_plio::create("smul_plin2", adf::plio_64_bits, "vb.txt");
+      plout1 = adf::output_plio::create("smul_plout1", adf::plio_64_bits, "scalar_mul.txt");
 #endif
 
-      adf::connect<> (plin1.out[0], lenet.in[0]);
-      adf::connect<> (plin2.out[0], lenet.in[1]);
+      adf::connect<adf::window<V_LEN*4>>(plin1.out[0], mul.in[0]);
+      adf::connect<adf::window<V_LEN*4>>(plin2.out[0], mul.in[1]);
+      adf::connect<adf::window<V_LEN*4>>(mul.out[0], plout1.in[0]);
       
-      adf::connect<> (lenet.out[0], plout1.in[0]);
-      adf::connect<> (lenet.out[1], plout2.in[0]);
+      adf::runtime<ratio>(mul) = 0.6;
     }
+
+};
+
+
+class VectorMulGraph : public adf::graph {
+
+  private:
+    adf::kernel mul;
+
+  public:
+    adf::input_plio plin1;
+    adf::input_plio plin2;
+    adf::output_plio plout1;
+
+    VectorMulGraph() { 
+      mul = adf::kernel::create(vector_mul);
+      adf::source(mul) = "mul.cc";
+
+#ifdef EXTERNAL_IO
+      plin1 = adf::input_plio::create("vmul_plin1", adf::plio_64_bits);
+      plin2 = adf::input_plio::create("vmul_plin2", adf::plio_64_bits);
+      plout1 = adf::output_plio::create("vmul_plout1", adf::plio_64_bits);
+#else
+      plin1 = adf::input_plio::create("vmul_plin1", adf::plio_64_bits, "va.txt");
+      plin2 = adf::input_plio::create("vmul_plin2", adf::plio_64_bits, "vb.txt");
+      plout1 = adf::output_plio::create("vmul_plout1", adf::plio_64_bits, "vector_mul.txt");
+#endif
+
+      adf::connect<adf::window<V_LEN*4>>(plin1.out[0], mul.in[0]);
+      adf::connect<adf::window<V_LEN*4>>(plin2.out[0], mul.in[1]);
+      adf::connect<adf::window<V_LEN*4>>(mul.out[0], plout1.in[0]);
+      
+      adf::runtime<ratio>(mul) = 0.6;
+    }
+
 };
 
 // uses 2/2 performance counters
