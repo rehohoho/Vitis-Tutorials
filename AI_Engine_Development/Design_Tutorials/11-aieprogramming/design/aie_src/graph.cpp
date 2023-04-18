@@ -19,22 +19,40 @@ ScalarMulGraph smul;
 VectorMulGraph vmul;
 
 
-#if defined(__AIESIM__) || defined(__X86SIM__)
+#ifdef __X86SIM__
 int main(int argc, char ** argv) {
 	adfCheck(smul.init(), "init smul");
-#ifdef __AIESIM__
-  get_graph_throughput_by_port(smul, "plin1", smul.plin1, V_LEN, sizeof(int32), ITER_CNT);
-#else
   adfCheck(smul.run(1), "run smul");
-#endif
 	adfCheck(smul.end(), "end smul");
 
   adfCheck(vmul.init(), "init vmul");
-#ifdef __AIESIM__
-  get_graph_throughput_by_port(vmul, "plin1", vmul.plin1, V_LEN, sizeof(int32), ITER_CNT);
-#else
   adfCheck(vmul.run(1), "run vmul");
+	adfCheck(vmul.end(), "end vmul");
+  return 0;
+}
 #endif
+
+
+#ifdef __AIESIM__
+#define runSim(graph, stmt)               \
+  do {                                    \
+	  adfCheck(graph.init(), "init graph"); \
+    stmt;                                 \
+	  adfCheck(graph.end(), "end graph");   \
+  } while (0)
+
+int main(int argc, char ** argv) {
+	
+	adfCheck(smul.init(), "init smul");
+  get_graph_latency(smul, "plin1/plout1", smul.plin1, smul.plout1, ITER_CNT);
+  get_graph_throughput_by_port(smul, "plin1", smul.plin1, V_LEN, sizeof(int32), ITER_CNT);
+  get_graph_throughput_by_port(smul, "plout1", smul.plout1, V_LEN, sizeof(int32), ITER_CNT);
+	adfCheck(smul.end(), "end smul");
+
+  adfCheck(vmul.init(), "init vmul");
+  get_graph_latency(vmul, "plin1/plout1", vmul.plin1, vmul.plout1, ITER_CNT);
+  get_graph_throughput_by_port(vmul, "plin1", vmul.plin1, V_LEN, sizeof(int32), ITER_CNT);
+  get_graph_throughput_by_port(vmul, "plout1", vmul.plout1, V_LEN, sizeof(int32), ITER_CNT);
 	adfCheck(vmul.end(), "end vmul");
   
   return 0;

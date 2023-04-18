@@ -37,8 +37,8 @@ class ScalarMulGraph : public adf::graph {
       plin2 = adf::input_plio::create("smul_plin2", adf::plio_64_bits);
       plout1 = adf::output_plio::create("smul_plout1", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("smul_plin1", adf::plio_64_bits, "va.txt");
-      plin2 = adf::input_plio::create("smul_plin2", adf::plio_64_bits, "vb.txt");
+      plin1 = adf::input_plio::create("smul_plin1", adf::plio_64_bits, "va_10samples.txt");
+      plin2 = adf::input_plio::create("smul_plin2", adf::plio_64_bits, "vb_10samples.txt");
       plout1 = adf::output_plio::create("smul_plout1", adf::plio_64_bits, "scalar_mul.txt");
 #endif
 
@@ -71,8 +71,8 @@ class VectorMulGraph : public adf::graph {
       plin2 = adf::input_plio::create("vmul_plin2", adf::plio_64_bits);
       plout1 = adf::output_plio::create("vmul_plout1", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("vmul_plin1", adf::plio_64_bits, "va.txt");
-      plin2 = adf::input_plio::create("vmul_plin2", adf::plio_64_bits, "vb.txt");
+      plin1 = adf::input_plio::create("vmul_plin1", adf::plio_64_bits, "va_10samples.txt");
+      plin2 = adf::input_plio::create("vmul_plin2", adf::plio_64_bits, "vb_10samples.txt");
       plout1 = adf::output_plio::create("vmul_plout1", adf::plio_64_bits, "vector_mul.txt");
 #endif
 
