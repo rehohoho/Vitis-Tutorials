@@ -179,16 +179,13 @@ if __name__ == "__main__":
   logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
   master_list = [
-    ("plin1", f"{args.input_dir}/data/0_1/matA_in_64plio.txt", 64, "int32"),
-    ("plin2", f"{args.input_dir}/data/0_2/matA_in_64plio.txt", 64, "int32"),
-    ("plin3", f"{args.input_dir}/data/0_3/matA_in_64plio.txt", 64, "int32"),
-    ("plin5", f"{args.input_dir}/data/0_5/matA_in_64plio.txt", 64, "int32"),
+    ("plin1", f"{args.input_dir}/va.txt", 64, "int32"),
+    ("plin2", f"{args.input_dir}/vb.txt", 64, "int32"),
   ]
 
   slave_list = [
     ("plout1", f"{args.output_dir}/output01.txt", 64, "int32"), 
     ("plout2", f"{args.output_dir}/output02.txt", 64, "int32"), 
-    ("plout4", f"{args.output_dir}/output04.txt", 64, "int32"),
   ]
   
   design = ExternalTraffic(master_list, slave_list)
