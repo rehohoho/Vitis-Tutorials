@@ -22,7 +22,7 @@ limitations under the License. */
 #include "input.h"
 #include "golden.h"
 
-#include "graph.cpp"
+#include "graph_mul.cpp"
 
 #include "experimental/xrt_aie.h"
 #include "experimental/xrt_kernel.h"
@@ -145,15 +145,21 @@ int main(int argc, char ** argv)
    adf::return_code ret;
 
    try {
-      adfCheck(simGraph.init(), "init graph");
-
+      adfCheck(smul.init(), "init graph");
 #ifndef EXTERNAL_IO
-      get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, PLIN1_LEN, sizeof(int32), iterCnt*100);
+      get_graph_throughput_by_port(smul, "plin1", smul.plin1, V_LEN, sizeof(int32), iterCnt*100);
 #else
-      get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, PLIN1_LEN, sizeof(int32), 1);
+      get_graph_throughput_by_port(smul, "plin1", smul.plin1, V_LEN, sizeof(int32), 1);
 #endif
-      
-      adfCheck(simGraph.end(), "end graph");
+      adfCheck(smul.end(), "end graph");
+
+      adfCheck(vmul.init(), "init graph");
+#ifndef EXTERNAL_IO
+      get_graph_throughput_by_port(vmul, "plin1", vmul.plin1, V_LEN, sizeof(int32), iterCnt*100);
+#else
+      get_graph_throughput_by_port(vmul, "plin1", vmul.plin1, V_LEN, sizeof(int32), 1);
+#endif
+      adfCheck(vmul.end(), "end graph");
    }
 
    catch (const std::system_error& ex) {

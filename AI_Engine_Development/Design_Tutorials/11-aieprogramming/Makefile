@@ -210,7 +210,7 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 #	Work/ 
 #	xnwOut/
 LIBADF_A 			:= $(BUILD_TARGET_DIR)/libadf.a
-GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph.cpp
+GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph_mul.cpp
 
 AIE_FLAGS := -include=$(AIE_SRC_REPO) \
 						 -include=$(AIE_SRC_REPO)/data \
@@ -303,10 +303,10 @@ VPP_LINK_FLAGS := --clock.defaultTolerance 0.001 \
                   --vivado.prop run.synth_1.STEPS.SYNTH_DESIGN.ARGS.CONTROL_SET_OPT_THRESHOLD=16
 
 ifeq ($(EXTIO), true)
-	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/net_x$(NET_INSTS)_etg.cfg
+	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/mul_etg.cfg
 else
 	VPP_LINK_FLAGS += --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0 \
-										--config $(SYSTEM_CONFIGS_REPO)/net_x$(NET_INSTS).cfg
+										--config $(SYSTEM_CONFIGS_REPO)/mul.cfg
 endif
 
 ifeq ($(EN_TRACE),1)
