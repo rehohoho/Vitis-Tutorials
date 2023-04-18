@@ -22,7 +22,7 @@ SECONDS=0
 #export XILINX_XRT=/usr
 
 # Executing the elf...
-./lenet_aie_xrt.elf a.xclbin
+./net_aie_xrt.elf a.xclbin
 
 return_code=$?
 
