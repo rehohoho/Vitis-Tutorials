@@ -21,7 +21,7 @@ help::
 	@echo  " Use the make recipes with required values for options mentioned below-"
 	@echo  "    TARGET             sw_emu (default) | hw_emu | hw,  build target"
 	@echo  "    EXTIO              true (default) | false,          traffic gen usage"
-	@echo  "    LENET_INSTS        1 (default) | 5 | 50"
+	@echo  "    NET_INSTS          1 (default) | 5 | 50"
 	@echo  "    PL_FREQ            250Mhz (default),                HLS kernel frequencies"
 	@echo  "    ITER_CNT           8 (default),                     design iteration count"
 	@echo  "    EN_TRACE           0 (default) | 1,                 enable profiling .ini (hw)"
@@ -55,10 +55,10 @@ TARGET ?= sw_emu
 EXTIO ?= true
 
 # =========================================================
-# No of LENET Instances can be set as:
+# No of Instances can be set as:
 #   1(default).
 # =========================================================
-LENET_INSTS := 1
+NET_INSTS := 1
 
 # =========================================================
 # No of Design Iterations 
@@ -88,10 +88,8 @@ MAX_CYCLES   := 100000
 # =========================================================
 # Source directories
 # =========================================================
-# Relative lenet directory
 RELATIVE_PROJECT_DIR := ./
-
-# Absolute lenet directory = <user path>/Tutorials/AI_Engine/lenet
+# Absolute net directory
 PROJECT_REPO := $(shell readlink -f $(RELATIVE_PROJECT_DIR))
 
 DESIGN_REPO  := $(PROJECT_REPO)/design
@@ -106,15 +104,15 @@ EXEC_SCRIPTS_REPO      := $(DESIGN_REPO)/exec_scripts
 VIVADO_METRICS_SCRIPTS_REPO := $(DESIGN_REPO)/vivado_metrics_scripts
 
 BASE_BLD_DIR     	:= $(PROJECT_REPO)/build
-INSTS_BLD_DIR     := $(BASE_BLD_DIR)/lenet_x$(LENET_INSTS)
+INSTS_BLD_DIR     := $(BASE_BLD_DIR)/net_x$(NET_INSTS)
 BUILD_TARGET_DIR  := $(INSTS_BLD_DIR)/$(TARGET)
 
 REPORTS_REPO := $(PROJECT_REPO)/reports_dir
-BLD_REPORTS_DIR := $(REPORTS_REPO)/lenet_x$(LENET_INSTS)/$(TARGET)
+BLD_REPORTS_DIR := $(REPORTS_REPO)/net_x$(NET_INSTS)/$(TARGET)
 
 XPE_REPO         := $(PROJECT_REPO)/xpe_dir
-BLD_XPE_DIR      := $(XPE_REPO)/lenet_x$(LENET_INSTS)
-VCD_FILE_NAME    := lenet_x$(LENET_INSTS)
+BLD_XPE_DIR      := $(XPE_REPO)/net_x$(NET_INSTS)
+VCD_FILE_NAME    := net_x$(NET_INSTS)
 BLD_TGT_VCD_FILE := $(BUILD_TARGET_DIR)/$(VCD_FILE_NAME).vcd
 XPE_FILE         := $(BLD_XPE_DIR)/graph_$(VCD_FILE_NAME).xpe
 
@@ -172,9 +170,6 @@ DATAMOVER_KERNEL_XO  := $(DATAMOVER_KERNEL_TOP).$(TARGET)
 
 TRAFFICGEN_WIDTH := 32
 
-LENET_KERNEL_TOP := lenet_kernel
-LENET_KERNEL_XO  := $(PL_SRC_REPO)/$(LENET_KERNEL_TOP)/$(LENET_KERNEL_TOP).xo
-
 DATAMOVER_KERNEL_VPP_FLAGS := --hls.clock $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)
 
 VPP_FLAGS := --platform $(PLATFORM) \
@@ -189,8 +184,7 @@ ifeq ($(EXTIO), true)
 	KERNEL_XOS := $(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_master_$(TRAFFICGEN_WIDTH).xo \
 								$(XILINX_VITIS)/data/emulation/XO/sim_ipc_axis_slave_$(TRAFFICGEN_WIDTH).xo
 else
-	KERNEL_XOS := $(LENET_KERNEL_XO) \
-								$(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo
+	KERNEL_XOS := $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo
 endif
 
 kernels: $(KERNEL_XOS)
@@ -208,7 +202,7 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 # ========================================================
 # This step creates an SDF Graph and the Work/ directory.
 # The Work/ directory contains the graph executable 
-# (lenet.o) which is used in the make xsa step.  
+# (net.o) which is used in the make xsa step.  
 # The aiecompiler is invoked with the -target=hw. 
 # Outputs: in build/ directory
 #	libsdf.a 
@@ -221,7 +215,7 @@ GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph.cpp
 AIE_FLAGS := -include=$(AIE_SRC_REPO) \
 						 -include=$(AIE_SRC_REPO)/data \
 						 --verbose \
-						 --Xpreproc="-DLENET_INSTS=$(LENET_INSTS)" \
+						 --Xpreproc="-DNET_INSTS=$(NET_INSTS)" \
 						 --Xpreproc="-DITER_CNT=$(ITER_CNT)" \
 						 --platform=$(PLATFORM) \
 						 --log-level=5 \
@@ -301,12 +295,7 @@ $(BLD_TGT_VCD_FILE):
 # This step links the graph executable (tx_chain.o) and 
 # the kernels into a xsa file. 
 # Outputs: in build/[hw_emu | hw]/ directory
-#	vck190_aie_lenet.[hw_emu | hw].xsa
-#	vck190_aie_lenet.[hw_emu | hw].xsa.info
-#	vck190_aie_lenet.[hw_emu | hw].xsa.link_summary
-#	vck190_aie_lenet.[hw_emu | hw].xsa
-#	vck190_aie_lenet.[hw_emu | hw].log
-APP_OBJ_NAME := lenet_aie
+APP_OBJ_NAME := net_aie
 XSA := vck190_$(APP_OBJ_NAME).xsa
 
 VPP_LINK_FLAGS := --clock.defaultTolerance 0.001 \
@@ -314,11 +303,10 @@ VPP_LINK_FLAGS := --clock.defaultTolerance 0.001 \
                   --vivado.prop run.synth_1.STEPS.SYNTH_DESIGN.ARGS.CONTROL_SET_OPT_THRESHOLD=16
 
 ifeq ($(EXTIO), true)
-	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS)_etg.cfg
+	VPP_LINK_FLAGS += --config $(SYSTEM_CONFIGS_REPO)/net_x$(NET_INSTS)_etg.cfg
 else
 	VPP_LINK_FLAGS += --clock.freqHz $(VPP_CLOCK_FREQ):$(DATAMOVER_KERNEL_TOP)_0 \
-										--clock.freqHz $(VPP_CLOCK_FREQ):$(LENET_KERNEL_TOP)_0 \
-										--config $(SYSTEM_CONFIGS_REPO)/lenet_x$(LENET_INSTS).cfg
+										--config $(SYSTEM_CONFIGS_REPO)/net_x$(NET_INSTS).cfg
 endif
 
 ifeq ($(EN_TRACE),1)
@@ -351,10 +339,10 @@ $(BUILD_TARGET_DIR)/$(XSA):$(KERNEL_XOS) $(LIBADF_A) $(SYSTEM_CONFIGS_REPO)/*
 # Outputs: in build/ directory
 # For finite run...
 # 	aie_control.o
-#	lenet_app.o 
-# 	lenet_xrt.elf
+#	  net_app.o 
+# 	net_xrt.elf
 APP_ELF 				:= $(APP_OBJ_NAME)_xrt.elf
-APP_SRC_CPP 	  := $(HOST_APP_SRC_REPO)/lenet_aie_app.cpp
+APP_SRC_CPP 	  := $(HOST_APP_SRC_REPO)/net_aie_app.cpp
 AIE_CONTROL_CPP := $(BUILD_TARGET_DIR)/$(WORK_DIR)/ps/c_rts/aie_control_xrt.cpp
 
 GCC_FLAGS := -O \
@@ -364,7 +352,7 @@ GCC_FLAGS := -O \
              -D__PS_ENABLE_AIE__ \
              -DXAIE_DEBUG \
              -DITER_CNT=$(ITER_CNT) \
-             -DLENET_INSTS=$(LENET_INSTS)
+             -DNET_INSTS=$(NET_INSTS)
 
 GCC_INC_FLAGS := -I$(XILINX_VITIS)/aietools/include/ \
                  -I$(AIE_SRC_REPO) \

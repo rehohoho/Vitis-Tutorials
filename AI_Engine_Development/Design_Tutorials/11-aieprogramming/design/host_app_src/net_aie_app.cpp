@@ -22,7 +22,7 @@ limitations under the License. */
 #include "input.h"
 #include "golden.h"
 
-#include "graph.h"
+#include "graph.cpp"
 
 #include "experimental/xrt_aie.h"
 #include "experimental/xrt_kernel.h"
@@ -93,7 +93,7 @@ int main(int argc, char ** argv)
       iterCnt = stoi(iter);
    }
    else {
-      iterCnt = LENET_INSTS;
+      iterCnt = NET_INSTS;
    }
    
    printf("Iteration : %d...\n", iterCnt);
@@ -144,25 +144,11 @@ int main(int argc, char ** argv)
    adf::registerXRT(dhdl, top->m_header.uuid);
    adf::return_code ret;
 
-   SimGraph simGraph;
-
    try {
       adfCheck(simGraph.init(), "init graph");
 
 #ifndef EXTERNAL_IO
       get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, PLIN1_LEN, sizeof(int32), iterCnt*100);
-      // adf::event::handle ehdl = adf::event::start_profiling(simGraph.plin1, adf::event::io_stream_start_to_bytes_transferred_cycles, PLIN1_LEN * iterCnt * 100 * sizeof(int32));
-
-      // simGraph.run(iterCnt * 100);
-      // simGraph.wait();
-
-      // if (ehdl != adf::event::invalid_handle) {
-      //    long long cycles = adf::event::read_profiling(ehdl);
-      //    adf::event::stop_profiling(ehdl);
-      //    printf("[plin1]: Cycles %lld Throughput %f samples/s\n", cycles, (double) PLIN1_LEN * iterCnt / (cycles * 1e-9)); //samples/second
-      // } else {
-      //    printf("[plin1]: ERROR: Invalid handle. Only two performance counter in a AIE-PL interface tile. Event profile is not supported for x86sim.\n");
-      // }
 #else
       get_graph_throughput_by_port(simGraph, "plin1", simGraph.plin1, PLIN1_LEN, sizeof(int32), 1);
 #endif
