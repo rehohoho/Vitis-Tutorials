@@ -271,8 +271,23 @@ endif
 endif
 
 aiesim_profile: graph
+ifeq ($(EXTIO), false)
+ifeq ($(TARGET), sw_emu)
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) --profile 2>&1 | tee -a aiesim.log
+	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output 2>&1 | tee -a x86sim_filetraffic.log
+else
+	cd $(BUILD_TARGET_DIR); \
+	aiesimulator $(AIE_SIM_FLAGS) --profile -o $(BLD_REPORTS_DIR)/aiesimulator_output 2>&1 | tee -a aiesim_filetraffic.log
+endif
+else  # Use External Traffic Generator
+ifeq ($(TARGET), sw_emu)
+	cd $(BUILD_TARGET_DIR); \
+	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/x86simulator_output
+else
+	cd $(BUILD_TARGET_DIR); \
+	aiesimulator $(AIE_SIM_FLAGS) --profile -o $(BLD_REPORTS_DIR)/aiesimulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/aiesimulator_output
+endif
+endif
 
 vcd: graph $(XPE_FILE)
 

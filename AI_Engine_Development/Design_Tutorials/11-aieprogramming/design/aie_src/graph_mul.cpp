@@ -15,8 +15,6 @@ limitations under the License. */
 #include "graph_mul.h"
 #include "graph_utils.h"
 
-#define ITER_CNT 1
-
 // instance to be compiled and used in host within xclbin
 ScalarMulGraph smul;
 VectorMulGraph vmul;
@@ -37,13 +35,6 @@ int main(int argc, char ** argv) {
 
 
 #ifdef __AIESIM__
-#define runSim(graph, stmt)               \
-  do {                                    \
-	  adfCheck(graph.init(), "init graph"); \
-    stmt;                                 \
-	  adfCheck(graph.end(), "end graph");   \
-  } while (0)
-
 int main(int argc, char ** argv) {
 	
 	adfCheck(smul.init(), "init smul");
