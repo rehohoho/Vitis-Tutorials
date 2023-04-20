@@ -249,44 +249,54 @@ $(LIBADF_A): $(AIE_SRC_REPO)/*
 #-o - Alias of --output-dir=<dir> option
 AIE_SIM_FLAGS := --pkg-dir=$(BUILD_TARGET_DIR)/$(WORK_DIR)/ \
 								 -i=$(AIE_SRC_REPO)/aiesim_data
+X86SIM_REPORT_DIR := $(BLD_REPORTS_DIR)/x86simulator_output
+AIESIM_REPORT_DIR := $(BLD_REPORTS_DIR)/aiesimulator_output
 
 TRAFFIC_GEN_PY := $(DESIGN_REPO)/trafficgen/xtg_aie.py
 
 aiesim: graph
 ifeq ($(EXTIO), false)
 ifeq ($(TARGET), sw_emu)
+	mkdir -p $(X86SIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output 2>&1 | tee -a x86sim_filetraffic.log
+	x86simulator $(AIE_SIM_FLAGS) -o=$(X86SIM_REPORT_DIR) 2>&1 | tee -a $(X86SIM_REPORT_DIR)/x86sim.log
 else
+	mkdir -p $(AIESIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) -o $(BLD_REPORTS_DIR)/aiesimulator_output 2>&1 | tee -a aiesim_filetraffic.log
+	aiesimulator $(AIE_SIM_FLAGS) -o $(AIESIM_REPORT_DIR) 2>&1 | tee -a $(AIESIM_REPORT_DIR)/aiesim.log
 endif
 else  # Use External Traffic Generator
 ifeq ($(TARGET), sw_emu)
+	mkdir -p $(X86SIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/x86simulator_output
+	x86simulator $(AIE_SIM_FLAGS) -o=$(X86SIM_REPORT_DIR) 2>&1 | tee -a $(X86SIM_REPORT_DIR)/x86sim.log & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(X86SIM_REPORT_DIR) 2>&1 | tee -a $(X86SIM_REPORT_DIR)/x86sim_filetraffic.log
 else
+	mkdir -p $(AIESIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) -o $(BLD_REPORTS_DIR)/aiesimulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/aiesimulator_output
+	aiesimulator $(AIE_SIM_FLAGS) -o $(AIESIM_REPORT_DIR) 2>&1 | tee -a $(AIESIM_REPORT_DIR)/aiesim.log & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(AIESIM_REPORT_DIR) 2>&1 | tee -a $(AIESIM_REPORT_DIR)/aiesim_filetraffic.log
 endif
 endif
 
 aiesim_profile: graph
 ifeq ($(EXTIO), false)
 ifeq ($(TARGET), sw_emu)
+	mkdir -p $(X86SIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output 2>&1 | tee -a x86sim_filetraffic.log
+	x86simulator $(AIE_SIM_FLAGS) -o=$(X86SIM_REPORT_DIR) 2>&1 | tee -a $(X86SIM_REPORT_DIR)/x86sim.log
 else
+	mkdir -p $(AIESIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) --profile -o $(BLD_REPORTS_DIR)/aiesimulator_output 2>&1 | tee -a aiesim_filetraffic.log
+	aiesimulator $(AIE_SIM_FLAGS) --profile -o $(AIESIM_REPORT_DIR) 2>&1 | tee -a $(AIESIM_REPORT_DIR)/aiesim.log
 endif
 else  # Use External Traffic Generator
 ifeq ($(TARGET), sw_emu)
+	mkdir -p $(X86SIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	x86simulator $(AIE_SIM_FLAGS) -o=$(BLD_REPORTS_DIR)/x86simulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/x86simulator_output
+	x86simulator $(AIE_SIM_FLAGS) -o=$(X86SIM_REPORT_DIR) 2>&1 | tee -a $(X86SIM_REPORT_DIR)/x86sim.log & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(X86SIM_REPORT_DIR) 2>&1 | tee -a $(X86SIM_REPORT_DIR)/x86sim_filetraffic.log
 else
+	mkdir -p $(AIESIM_REPORT_DIR); \
 	cd $(BUILD_TARGET_DIR); \
-	aiesimulator $(AIE_SIM_FLAGS) --profile -o $(BLD_REPORTS_DIR)/aiesimulator_output & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(BLD_REPORTS_DIR)/aiesimulator_output
+	aiesimulator $(AIE_SIM_FLAGS) --profile -o $(AIESIM_REPORT_DIR) 2>&1 | tee -a $(AIESIM_REPORT_DIR)/aiesim.log & python3 $(TRAFFIC_GEN_PY) --input_dir $(AIE_SRC_REPO)/aiesim_data --output_dir $(AIESIM_REPORT_DIR) 2>&1 | tee -a $(AIESIM_REPORT_DIR)/aiesim_filetraffic.log
 endif
 endif
 
