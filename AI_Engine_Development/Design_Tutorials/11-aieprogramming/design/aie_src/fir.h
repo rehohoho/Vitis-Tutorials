@@ -65,9 +65,12 @@ class Multikernel_32tap_fir_core0 {
     alignas(aie::vector_decl_align) aie::vector<cint16,16> delay_line; // store data between graph iterations
 
   public:
-    Multikernel_32tap_fir_core0(const cint16 (&taps)[32]) {
+    Multikernel_32tap_fir_core0(
+      const cint16 (&taps)[32], 
+      const int delay
+    ) {
       for (int i = 0 ; i < 8; i++) eq_coef[i] = taps[i];
-      core0_init();
+      core0_init(delay);
     }
 
     __attribute__((noinline)) 
@@ -75,7 +78,7 @@ class Multikernel_32tap_fir_core0 {
       input_stream<cint16>* sig_in, 
       output_stream<cacc48>* cascadeout);
     
-    void core0_init();
+    void core0_init(const int delay);
 
     static void registerKernelClass() {
       REGISTER_FUNCTION(Multikernel_32tap_fir_core0::core0);
@@ -91,23 +94,54 @@ class Multikernel_32tap_fir_core1 {
     alignas(aie::vector_decl_align) aie::vector<cint16,16> delay_line; // store data between graph iterations
 
   public:
-    Multikernel_32tap_fir_core1(const cint16 (&taps)[32]) {
-      for (int i = 0 ; i < 8; i++) eq_coef[i] = taps[i+8];
-      core1_init();
+    Multikernel_32tap_fir_core1(
+      const cint16 (&taps)[32],
+      const int delay
+    ) {
+      for (int i = 0 ; i < 8; i++) eq_coef[i] = taps[i+delay];
+      core1_init(delay);
     }
 
     __attribute__((noinline)) 
     void core1(
       input_stream<cint16>* sig_in, 
       input_stream<cacc48>* cascadein,
-      output_stream<cint16>* sig_out
-      // output_stream<cacc48>* cascadeout
-    );
+      output_stream<cacc48>* cascadeout);
     
-    void core1_init();
+    void core1_init(const int delay);
 
     static void registerKernelClass() {
       REGISTER_FUNCTION(Multikernel_32tap_fir_core1::core1);
+    }
+};
+
+
+template <int SAMPLES, int SHIFT>
+class Multikernel_32tap_fir_core3 {
+
+  private:
+    alignas(aie::vector_decl_align) cint16 eq_coef[8];
+    alignas(aie::vector_decl_align) aie::vector<cint16,16> delay_line; // store data between graph iterations
+
+  public:
+    Multikernel_32tap_fir_core3(
+      const cint16 (&taps)[32],
+      const int delay
+    ) {
+      for (int i = 0 ; i < 8; i++) eq_coef[i] = taps[i+delay];
+      core3_init(delay);
+    }
+
+    __attribute__((noinline)) 
+    void core3(
+      input_stream<cint16>* sig_in, 
+      input_stream<cacc48>* cascadein,
+      output_stream<cint16>* data_out);
+    
+    void core3_init(const int delay);
+
+    static void registerKernelClass() {
+      REGISTER_FUNCTION(Multikernel_32tap_fir_core3::core3);
     }
 };
 
