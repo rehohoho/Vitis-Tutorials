@@ -19,7 +19,7 @@
 export NArgs=$BASH_ARGC
 export Args=$*
 
-python - <<END
+python3 - <<END
 import os
 from ProcessAIEOutputLib import *
 
