@@ -4,6 +4,7 @@
 // instance to be compiled and used in host within xclbin
 // ScalarFirGraph sfir;
 VectorFirGraph vfir;
+VectorIntrinsicFirGraph vifir;
 MultikernelFirGraph mfir;
 
 
@@ -17,9 +18,13 @@ int main(int argc, char ** argv) {
   adfCheck(vfir.run(1), "run vfir");
 	adfCheck(vfir.end(), "end vfir");
   
-  adfCheck(mfir.init(), "init vfir");
-  adfCheck(mfir.run(1), "run vfir");
-	adfCheck(mfir.end(), "end vfir");
+  adfCheck(vifir.init(), "init vifir");
+  adfCheck(vifir.run(1), "run vifir");
+	adfCheck(vifir.end(), "end vifir");
+
+  adfCheck(mfir.init(), "init mfir");
+  adfCheck(mfir.run(1), "run mfir");
+	adfCheck(mfir.end(), "end mfir");
   return 0;
 }
 #endif
@@ -35,6 +40,10 @@ int main(int argc, char ** argv) {
   adfCheck(vfir.init(), "init vfir");
   get_graph_throughput_by_port(vfir, "plin1", vfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
 	adfCheck(vfir.end(), "end vfir");
+
+  adfCheck(vifir.init(), "init vifir");
+  get_graph_throughput_by_port(vifir, "plin1", vifir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
+	adfCheck(vifir.end(), "end vifir");
   
   adfCheck(mfir.init(), "init mfir");
   get_graph_throughput_by_port(mfir, "plin1", mfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
