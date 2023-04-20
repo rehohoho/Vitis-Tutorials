@@ -79,15 +79,17 @@ class VectorFirGraph : public adf::graph {
 class MultikernelFirGraph : public adf::graph {
 
   private:
-    adf::kernel fir;
+    adf::kernel k[2];
 
   public:
     adf::input_plio plin1;
     adf::output_plio plout1;
 
     MultikernelFirGraph() { 
-      fir = adf::kernel::create_object<Multikernel_32tap_fir<SAMPLES, SHIFT>>(taps);
-      adf::source(fir) = "fir.cc";
+      k[0] = adf::kernel::create_object<Multikernel_32tap_fir_core0<SAMPLES, SHIFT>>(taps);
+      k[1] = adf::kernel::create_object<Multikernel_32tap_fir_core1<SAMPLES, SHIFT>>(taps);
+      adf::source(k[0]) = "fir.cc";
+      adf::source(k[1]) = "fir.cc";
 
 #ifdef EXTERNAL_IO
       plin1 = adf::input_plio::create("mfir_plin1", adf::plio_64_bits);
@@ -97,10 +99,13 @@ class MultikernelFirGraph : public adf::graph {
       plout1 = adf::output_plio::create("mfir_plout1", adf::plio_64_bits, "multikernel_fir.txt");
 #endif
       
-      adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
-      adf::connect<adf::stream> n1 (fir.out[0], plout1.in[0]);
+      adf::connect<adf::stream> s0 (plin1.out[0], k[0].in[0]);
+      adf::connect<adf::stream> s1 (plin1.out[0], k[1].in[0]);
+      adf::connect<adf::cascade> c0 (k[0].out[0], k[1].in[1]);
+      adf::connect<adf::stream> s2 (k[1].out[0], plout1.in[0]);
       
-      adf::runtime<ratio>(fir) = 0.6;
+      adf::runtime<ratio>(k[0]) = 0.6;
+      adf::runtime<ratio>(k[1]) = 0.6;
     }
 
 };
