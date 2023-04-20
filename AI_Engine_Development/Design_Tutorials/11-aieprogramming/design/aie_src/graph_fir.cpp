@@ -24,15 +24,11 @@ int main(int argc, char ** argv) {
 int main(int argc, char ** argv) {
 	
 	adfCheck(sfir.init(), "init sfir");
-  get_graph_latency(sfir, "plin1/plout1", sfir.plin1, sfir.plout1, ITER_CNT);
   get_graph_throughput_by_port(sfir, "plin1", sfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
-  get_graph_throughput_by_port(sfir, "plout1", sfir.plout1, SAMPLES, sizeof(cint16), ITER_CNT);
 	adfCheck(sfir.end(), "end sfir");
 
   adfCheck(vfir.init(), "init vfir");
-  get_graph_latency(vfir, "plin1/plout1", vfir.plin1, vfir.plout1, ITER_CNT);
   get_graph_throughput_by_port(vfir, "plin1", vfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
-  get_graph_throughput_by_port(vfir, "plout1", vfir.plout1, SAMPLES, sizeof(cint16), ITER_CNT);
 	adfCheck(vfir.end(), "end vfir");
   
   return 0;

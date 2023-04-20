@@ -41,7 +41,7 @@ void Scalar_32tap_fir<SAMPLES, SHIFT>::filter(
 
 // initialize data
 template <int SAMPLES, int SHIFT>
-void Scalar_32tap_fir<SAMPLES, SHIFT>::scalar_32tap_fir_init() {
+void Scalar_32tap_fir<SAMPLES, SHIFT>::init() {
   for (int i = 0; i < 32; i++){
     int tmp = get_ss(0);
     delay_line[i] = *(cint16*)&tmp;
@@ -73,8 +73,8 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
     //performace 1st 8 samples
     acc = aie::sliding_mul<8, 8>(coe[0], 0, buff, 0);
     acc = aie::sliding_mac<8, 8>(acc, coe[1], 0, buff, 8);
-    buff.insert(0, readincr_v<4>(sig_in));
-    buff.insert(1, readincr_v<4>(sig_in));
+    buff.insert(0, readincr_v<4>(sig_in)); // first 8 with new data
+    buff.insert(1, readincr_v<4>(sig_in)); // interleaving loads allow load+MAC in same cycle
     acc = aie::sliding_mac<8, 8>(acc, coe[2], 0, buff, 16);
     acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 24);
     writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
@@ -82,10 +82,10 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
     //performace 2nd 8 samples
     acc = aie::sliding_mul<8, 8>(coe[0], 0, buff, 8);
     acc = aie::sliding_mac<8, 8>(acc, coe[1], 0, buff, 16);
-    buff.insert(2, readincr_v<4>(sig_in));
+    buff.insert(2, readincr_v<4>(sig_in));  // update next 8 with new data
     buff.insert(3, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<8, 8>(acc, coe[2], 0, buff, 24);
-    acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 0);
+    acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 0); // uses first 8 new data
     writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
 
     //performace 3rd 8 samples
@@ -100,7 +100,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
     //performace 4th 8 samples
     acc = aie::sliding_mul<8, 8>(coe[0], 0, buff, 24);
     acc = aie::sliding_mac<8, 8>(acc, coe[1], 0, buff, 0);
-    buff.insert(6, readincr_v<4>(sig_in));
+    buff.insert(6, readincr_v<4>(sig_in)); // update last 8 with new data
     buff.insert(7, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<8, 8>(acc, coe[2], 0, buff, 8);
     acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 16);
@@ -116,7 +116,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
 
 
 template <int SAMPLES, int SHIFT>
-void Vector_32tap_fir<SAMPLES, SHIFT>::vector_32tap_fir_init() {
+void Vector_32tap_fir<SAMPLES, SHIFT>::init() {
   //initialize data
   for (int i = 0; i < 8; i++){
     aie::vector<int16, 8> tmp = get_wss(0);

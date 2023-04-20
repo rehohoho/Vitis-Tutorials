@@ -11,12 +11,12 @@ class Scalar_32tap_fir {
   private:
     alignas(32) cint16 eq_coef[32];
     alignas(32) cint16 delay_line[32]; // keep margin data between different executions of graph 
-    void scalar_32tap_fir_init(); // initialize data
+    void init(); // initialize data
 
   public:
     Scalar_32tap_fir(const cint16 (&taps)[32]) {
       for (int i = 0; i < 32; i++) eq_coef[i] = taps[i];
-      scalar_32tap_fir_init();
+      init();
     }
 
     __attribute__((noinline)) 
@@ -35,14 +35,14 @@ template <int SAMPLES, int SHIFT>
 class Vector_32tap_fir {
 
   private:
-    alignas(aie::vector_decl_align) cint16 eq_coef[32];
+    alignas(aie::vector_decl_align) cint16 eq_coef[32]; // ensure aligned for load and store
     alignas(32) aie::vector<cint16,32> delay_line; // keep margin data between different executions of graph 
-    void vector_32tap_fir_init(); // initialize data
+    void init(); // initialize data
 
   public:
     Vector_32tap_fir(const cint16 (&taps)[32]) {
       for (int i = 0; i < 32; i++) eq_coef[i] = taps[i];
-      vector_32tap_fir_init();
+      init();
     }
 
     __attribute__((noinline)) 
