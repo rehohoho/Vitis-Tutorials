@@ -1,6 +1,22 @@
 #include "fir_intrinsics.h"
 
 
+/**
+ * mul4:		y0 += d1t0 d2t1,
+ * 					y1 += 		 d2t0 d3t1,
+ * 					y2 += 				  d3t0 d4t1,
+ * 					y3 += 						   d4t0 d5t1
+ * 
+ * offset 0x3210 with start 1, gives d1, d2, d3, d4 starting index
+ * offset 0x0000 with start 0, gives t0, t0, t0, t0 starting index
+ * 
+ * mac4:		y0 += 					d3t0 d4t1
+ * 					y1 +=								 d4t0 d5t1
+ * 					y2 += 										d5t0 d6t1
+ * 					y3 += 												 d6t0 d7t1
+ * ...
+ * ...
+ */
 #define MULMAC(N) \
 		taps =  *coeff++; \
 		acc = mul4(data,N,0x3210,1,taps,0,0x0000,1); \
@@ -39,67 +55,68 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		chess_loop_range(SAMPLES/32, SAMPLES/32)
 		chess_pipeline_adjust_preamble(10)
 	{
-		MULMAC(1);
-		MACMAC(9);
-		MACMAC(17);
+		// loop rotation: start on first index to load for next iteration near end to reduce code dependency
+		MULMAC(0);	// 4 ops on 4 samples
+		MACMAC(8);
+		MACMAC(16);
 		data = upd_v(data, 0, readincr_v4(sin));
-		MACMAC(25);
+		MACMAC(24);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
-		MULMAC(5);
-		MACMAC(13);
-		MACMAC(21);
+		MULMAC(4);
+		MACMAC(12);
+		MACMAC(20);
 		data = upd_v(data, 1, readincr_v4(sin));
-		MACMAC(29);
+		MACMAC(28);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
-		MULMAC(9);
-		MACMAC(17);
-		MACMAC(25);
+		MULMAC(8);
+		MACMAC(16);
+		MACMAC(24);
 		data = upd_v(data, 2, readincr_v4(sin));
-		MACMAC(1);
+		MACMAC(0);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
-		MULMAC(13);
-		MACMAC(21);
-		MACMAC(29);
+		MULMAC(12);
+		MACMAC(20);
+		MACMAC(28);
 		data = upd_v(data, 3, readincr_v4(sin));
-		MACMAC(5);
+		MACMAC(4);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
-		MULMAC(17);
-		MACMAC(25);
-		MACMAC(1);
+		MULMAC(16);
+		MACMAC(24);
+		MACMAC(0);
 		data = upd_v(data, 4, readincr_v4(sin));
-		MACMAC(9);
+		MACMAC(8);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
-		MULMAC(21);
-		MACMAC(29);
-		MACMAC(5);
+		MULMAC(20);
+		MACMAC(28);
+		MACMAC(4);
 		data = upd_v(data, 5, readincr_v4(sin));
-		MACMAC(13);
+		MACMAC(12);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
-		MULMAC(25);
-		MACMAC(1);
-		MACMAC(9);
+		MULMAC(24);
+		MACMAC(0);
+		MACMAC(8);
 		data = upd_v(data, 6, readincr_v4(sin));
-		MACMAC(17);
+		MACMAC(16);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
-		MULMAC(29);
-		MACMAC(5);
-		MACMAC(13);
+		MULMAC(28);
+		MACMAC(4);
+		MACMAC(12);
 		data = upd_v(data, 7, readincr_v4(sin));
-		MACMAC(21);
+		MACMAC(20);
 		writeincr_v4(sout, srs(acc, SHIFT));
 		coeff -= 4;
 	}
