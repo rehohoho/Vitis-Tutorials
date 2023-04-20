@@ -56,4 +56,30 @@ class Vector_32tap_fir {
 
 };
 
+
+template <int SAMPLES, int SHIFT>
+class Multikernel_32tap_fir {
+
+  private:
+    alignas(aie::vector_decl_align) cint16 eq_coef0[8];
+    alignas(aie::vector_decl_align) aie::vector<cint16,16> delay_line; // store data between graph iterations
+
+  public:
+    Multikernel_32tap_fir(const cint16 (&taps)[32]) {
+      for (int i = 0 ; i < 8; i++) eq_coef0[i] = taps[i];
+      core0_init();
+    }
+
+    __attribute__((noinline)) 
+    void core0(
+      input_stream<cint16>* sig_in, 
+      output_stream<cint16>* sig_out);
+    
+    void core0_init();
+
+    static void registerKernelClass() {
+      REGISTER_FUNCTION(Multikernel_32tap_fir::core0);
+    }
+};
+
 #endif // FIR_H_

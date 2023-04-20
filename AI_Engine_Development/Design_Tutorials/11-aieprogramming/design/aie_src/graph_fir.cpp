@@ -2,19 +2,24 @@
 #include "graph_utils.h"
 
 // instance to be compiled and used in host within xclbin
-ScalarFirGraph sfir;
+// ScalarFirGraph sfir;
 VectorFirGraph vfir;
+MultikernelFirGraph mfir;
 
 
 #ifdef __X86SIM__
 int main(int argc, char ** argv) {
-	adfCheck(sfir.init(), "init sfir");
-  adfCheck(sfir.run(1), "run sfir");
-	adfCheck(sfir.end(), "end sfir");
+	// adfCheck(sfir.init(), "init sfir");
+  // adfCheck(sfir.run(1), "run sfir");
+	// adfCheck(sfir.end(), "end sfir");
 
   adfCheck(vfir.init(), "init vfir");
   adfCheck(vfir.run(1), "run vfir");
 	adfCheck(vfir.end(), "end vfir");
+  
+  adfCheck(mfir.init(), "init vfir");
+  adfCheck(mfir.run(1), "run vfir");
+	adfCheck(mfir.end(), "end vfir");
   return 0;
 }
 #endif
@@ -23,14 +28,17 @@ int main(int argc, char ** argv) {
 #ifdef __AIESIM__
 int main(int argc, char ** argv) {
 	
-	adfCheck(sfir.init(), "init sfir");
-  get_graph_throughput_by_port(sfir, "plin1", sfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
-	adfCheck(sfir.end(), "end sfir");
+	// adfCheck(sfir.init(), "init sfir");
+  // get_graph_throughput_by_port(sfir, "plin1", sfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
+	// adfCheck(sfir.end(), "end sfir");
 
   adfCheck(vfir.init(), "init vfir");
   get_graph_throughput_by_port(vfir, "plin1", vfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
 	adfCheck(vfir.end(), "end vfir");
   
+  adfCheck(mfir.init(), "init mfir");
+  get_graph_throughput_by_port(mfir, "plin1", mfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
+	adfCheck(mfir.end(), "end mfir");
   return 0;
 }
 #endif
