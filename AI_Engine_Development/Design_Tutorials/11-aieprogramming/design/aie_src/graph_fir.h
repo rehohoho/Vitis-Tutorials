@@ -145,4 +145,34 @@ class VectorIntrinsicFirGraph : public adf::graph {
 
 };
 
+
+class MultikernelIntrinsicFirGraph : public adf::graph {
+
+  private:
+    adf::kernel fir;
+
+  public:
+    adf::input_plio plin1;
+    adf::output_plio plout1;
+
+    MultikernelIntrinsicFirGraph() { 
+      fir = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>>(taps);
+      adf::source(fir) = "fir_intrinsics.cc";
+
+#ifdef EXTERNAL_IO
+      plin1 = adf::input_plio::create("mifir_plin1", adf::plio_64_bits);
+      plout1 = adf::output_plio::create("mifir_plout1", adf::plio_64_bits);
+#else
+      plin1 = adf::input_plio::create("mifir_plin1", adf::plio_64_bits, "fir_10samples.txt");
+      plout1 = adf::output_plio::create("mifir_plout1", adf::plio_64_bits, "multikernel_intrinsics_fir.txt");
+#endif
+      
+      adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
+      adf::connect<adf::stream> n1 (fir.out[0], plout1.in[0]);
+      
+      adf::runtime<ratio>(fir) = 0.6;
+    }
+
+};
+
 #endif // __GRAPH_H__
