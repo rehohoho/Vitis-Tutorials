@@ -1,4 +1,5 @@
 #include "fir.h"
+#include "kernel_utils.h"
 
 
 template <int SAMPLES, int SHIFT>
@@ -7,10 +8,7 @@ void Scalar_32tap_fir<SAMPLES, SHIFT>::filter(
   input_stream<cint16>* sig_in,
   output_stream<cint16>* sig_out
 ) {
-  // For profiling only 
-  unsigned cycle_num[2];
-  aie::tile tile = aie::tile::current();
-  cycle_num[0] = tile.cycles(); // cycle counter of the AI Engine tile
+  PROFILE_HEADER;
 
   for(int i = 0; i < SAMPLES; i++){
     cint64 sum = {0, 0};// larger data to mimic accumulator
@@ -34,9 +32,7 @@ void Scalar_32tap_fir<SAMPLES, SHIFT>::filter(
     }
   }
   
-  // For profiling only 
-  cycle_num[1] = tile.cycles(); // cycle counter of the AI Engine tile
-  printf("start = %d,end = %d,total = %d\n", cycle_num[0], cycle_num[1], cycle_num[1] - cycle_num[0]);
+  PROFILE_FOOTER;
 }
 
 // initialize data
@@ -55,10 +51,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
   input_stream<cint16>* sig_in,
   output_stream<cint16>* sig_out
 ) {
-  // For profiling only 
-  unsigned cycle_num[2];
-  aie::tile tile = aie::tile::current();
-  cycle_num[0] = tile.cycles(); // cycle counter of the AI Engine tile
+  PROFILE_HEADER;
 
   const aie::vector<cint16, 8> coe[4] = {
     aie::load_v<8>(eq_coef), 
@@ -109,9 +102,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
 
   delay_line = buff;
 
-  // For profiling only 
-  cycle_num[1] = tile.cycles(); // cycle counter of the AI Engine tile
-  printf("start = %d,end = %d,total = %d\n", cycle_num[0], cycle_num[1], cycle_num[1] - cycle_num[0]);
+  PROFILE_FOOTER;
 };
 
 
@@ -125,6 +116,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::init() {
 };
 
 
+// Computes partial result for first 8 coefficients on all samples in chunks of 16
 // aicompiler.log: 16 cycles for 16 partial results, 1 cycle / partial result
 template <int SAMPLES, int SHIFT>
 __attribute__((noinline)) // optional: keep function hierarchy
@@ -132,10 +124,7 @@ void Multikernel_32tap_fir_core0<SAMPLES, SHIFT>::core0(
   input_stream<cint16>* sig_in,
   output_stream<cacc48>* cascadeout
 ){
-  // For profiling only 
-  unsigned cycle_num[2];
-  aie::tile tile = aie::tile::current();
-  cycle_num[0] = tile.cycles(); // cycle counter of the AI Engine tile
+  PROFILE_HEADER;
 
   const cint16_t * restrict coeff = eq_coef;
   const aie::vector<cint16, 8> coe = aie::load_v<8>(coeff);
@@ -163,9 +152,7 @@ void Multikernel_32tap_fir_core0<SAMPLES, SHIFT>::core0(
   }
   delay_line = buff;
 
-  // For profiling only 
-  cycle_num[1] = tile.cycles(); // cycle counter of the AI Engine tile
-  printf("start = %d,end = %d,total = %d\n", cycle_num[0], cycle_num[1], cycle_num[1] - cycle_num[0]);
+  PROFILE_FOOTER;
 };
 
 
@@ -186,10 +173,7 @@ void Multikernel_32tap_fir_core1<SAMPLES, SHIFT>::core1(
   input_stream<cacc48>* cascadein,
   output_stream<cacc48>* cascadeout
 ) {
-  // For profiling only 
-  unsigned cycle_num[2];
-  aie::tile tile = aie::tile::current();
-  cycle_num[0] = tile.cycles(); // cycle counter of the AI Engine tile
+  PROFILE_HEADER;
 
   const aie::vector<cint16, 8> coe = aie::load_v<8>(eq_coef);
   aie::vector<cint16, 16> buff = delay_line;
@@ -219,9 +203,7 @@ void Multikernel_32tap_fir_core1<SAMPLES, SHIFT>::core1(
   }
   delay_line = buff;
 
-  // For profiling only 
-  cycle_num[1] = tile.cycles(); // cycle counter of the AI Engine tile
-  printf("start = %d,end = %d,total = %d\n", cycle_num[0], cycle_num[1], cycle_num[1] - cycle_num[0]);
+  PROFILE_FOOTER;
 }
 
 
@@ -242,10 +224,7 @@ void Multikernel_32tap_fir_core3<SAMPLES, SHIFT>::core3(
   input_stream<cacc48>* cascadein,
   output_stream<cint16>* data_out
 ) {
-  // For profiling only 
-  unsigned cycle_num[2];
-  aie::tile tile = aie::tile::current();
-  cycle_num[0] = tile.cycles(); // cycle counter of the AI Engine tile
+  PROFILE_HEADER;
 
   const aie::vector<cint16, 8> coe = aie::load_v<8>(eq_coef);
   aie::vector<cint16, 16> buff = delay_line;
@@ -275,9 +254,7 @@ void Multikernel_32tap_fir_core3<SAMPLES, SHIFT>::core3(
   }
   delay_line = buff;
 
-  // For profiling only 
-  cycle_num[1] = tile.cycles(); // cycle counter of the AI Engine tile
-  printf("start = %d,end = %d,total = %d\n", cycle_num[0], cycle_num[1], cycle_num[1] - cycle_num[0]);
+  PROFILE_FOOTER;
 }
 
 template <int SAMPLES, int SHIFT>

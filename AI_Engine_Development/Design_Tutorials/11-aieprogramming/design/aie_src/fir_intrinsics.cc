@@ -1,5 +1,5 @@
 #include "fir_intrinsics.h"
-
+#include "kernel_utils.h"
 
 /**
  * mul4:		y0 += d1t0 d2t1,
@@ -37,10 +37,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
   input_stream_cint16* sin,
   output_stream_cint16* sout
 ) {
-  // For profiling only 
-  unsigned cycle_num[2];
-  aie::tile tile = aie::tile::current();
-  cycle_num[0] = tile.cycles(); // cycle counter of the AI Engine tile
+  PROFILE_HEADER;
 
 	v8cint16 *coeff = (v8cint16*) weights;
 	v8cint16 taps = undef_v8cint16();
@@ -122,9 +119,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 
 	*ptr_delay_line = data;
   
-  // For profiling only 
-  cycle_num[1] = tile.cycles(); // cycle counter of the AI Engine tile
-  printf("start = %d,end = %d,total = %d\n", cycle_num[0], cycle_num[1], cycle_num[1] - cycle_num[0]);
+	PROFILE_FOOTER;
 };
 
 template <int SAMPLES, int SHIFT>
@@ -168,6 +163,7 @@ void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::filter(
   input_stream<cint16>* sin,
   output_stream<cacc48>* cout
 ) {
+	PROFILE_HEADER;
 	v8cint16 taps = *(v8cint16*) weights;
 	v16cint16 data = *(v16cint16*) delay_line;
 	v4cacc48 acc = undef_v4cacc48();
@@ -182,6 +178,7 @@ void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::filter(
 		PARTIALMUL(12, 3);
 		writeincr_v4(cout, acc);
 	}
+	PROFILE_FOOTER;
 }
 
 template <int SAMPLES, int SHIFT>
@@ -200,6 +197,7 @@ void Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>::filter(
 	input_stream<cacc48>* cin,
 	output_stream<cacc48>* cout
 ) {
+	PROFILE_HEADER;
 	v8cint16 taps = *(v8cint16*) weights;
 	v16cint16 data = *(v16cint16*) delay_line;
 	v4cacc48 acc = undef_v4cacc48();
@@ -218,6 +216,7 @@ void Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>::filter(
 		PARTIALMAC(12, 3);
 		writeincr_v4(cout, acc);
 	}
+	PROFILE_FOOTER;
 }
 
 template <int SAMPLES, int SHIFT>
@@ -236,6 +235,7 @@ void Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>::filter(
 	input_stream<cacc48>* cin,
 	output_stream<cint16>* sout
 ) {
+	PROFILE_HEADER;
 	v8cint16 taps = *(v8cint16*) weights;
 	v16cint16 data = *(v16cint16*) delay_line;
 	v4cacc48 acc = undef_v4cacc48();
@@ -254,6 +254,7 @@ void Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>::filter(
 		PARTIALMAC(12, 3);
 		writeincr_v4(sout, srs(acc, SHIFT));
 	}
+	PROFILE_FOOTER;
 }
 
 template <int SAMPLES, int SHIFT>
