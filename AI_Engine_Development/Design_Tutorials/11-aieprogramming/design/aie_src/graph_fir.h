@@ -156,15 +156,20 @@ std::vector<cint16> taps4_p3 = std::vector<cint16>(GET_PHASE(24,1));
 class MultikernelIntrinsicFirGraph : public adf::graph {
 
   private:
-    adf::kernel fir;
+    adf::kernel k[4];
 
   public:
     adf::input_plio plin1;
     adf::output_plio plout1;
 
     MultikernelIntrinsicFirGraph() { 
-      fir = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>>(taps4_p0, 0);
-      adf::source(fir) = "fir_intrinsics.cc";
+      k[0] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>>(taps4_p0, 0);
+      k[1] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>>(taps4_p1, 8);
+      k[2] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>>(taps4_p2, 16);
+      k[3] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>>(taps4_p3, 24);
+      
+      for (int i = 0; i < 4; i++)
+        adf::source(k[i]) = "fir_intrinsics.cc";
 
 #ifdef EXTERNAL_IO
       plin1 = adf::input_plio::create("mifir_plin1", adf::plio_64_bits);
@@ -174,9 +179,14 @@ class MultikernelIntrinsicFirGraph : public adf::graph {
       plout1 = adf::output_plio::create("mifir_plout1", adf::plio_64_bits, "multikernel_intrinsics_fir.txt");
 #endif
       
-      adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
-      adf::connect<adf::stream> n1 (fir.out[0], plout1.in[0]);
-      adf::runtime<ratio>(fir) = 0.6;
+      for (int i = 0; i < 4; i++)
+        adf::connect<adf::stream> (plin1.out[0], k[i].in[0]);
+      for (int i = 0; i < 3; i++)
+        adf::connect<adf::cascade> (k[i].out[0], k[i+1].in[1]);
+      adf::connect<adf::stream> (k[3].out[0], plout1.in[0]);
+      
+      for (int i = 0; i < 4; i++)
+        adf::runtime<ratio>(k[i]) = 0.6;
     }
 
 };

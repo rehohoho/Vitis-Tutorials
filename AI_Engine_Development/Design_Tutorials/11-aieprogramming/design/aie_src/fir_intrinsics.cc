@@ -156,10 +156,17 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::init() {
 	data = upd_v(data, DOFFSET, readincr_v4(sin)); \
 	acc = mac4(acc, data, XSTART+6, 0x3210, 1, taps, 6, 0x0000, 1);
 
+#define PARTIALMAC(XSTART, DOFFSET) \
+	acc = mac4(acc, data, XSTART, 0x3210, 1, taps, 0, 0x0000, 1); \
+	acc = mac4(acc, data, XSTART+2, 0x3210, 1, taps, 2, 0x0000, 1); \
+	acc = mac4(acc, data, XSTART+4, 0x3210, 1, taps, 4, 0x0000, 1); \
+	data = upd_v(data, DOFFSET, readincr_v4(sin)); \
+	acc = mac4(acc, data, XSTART+6, 0x3210, 1, taps, 6, 0x0000, 1);
+
 template <int SAMPLES, int SHIFT>
 void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::filter(
   input_stream<cint16>* sin,
-  output_stream<cint16>* sout
+  output_stream<cacc48>* cout
 ) {
 	v8cint16 taps = *(v8cint16*) weights;
 	v16cint16 data = *(v16cint16*) delay_line;
@@ -167,13 +174,13 @@ void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::filter(
 
 	for (int i = 0; i < SAMPLES / 16; i++) {
 		PARTIALMUL(0, 0);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		writeincr_v4(cout, acc);
 		PARTIALMUL(4, 1);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		writeincr_v4(cout, acc);
 		PARTIALMUL(8, 2);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		writeincr_v4(cout, acc);
 		PARTIALMUL(12, 3);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		writeincr_v4(cout, acc);
 	}
 }
 
@@ -185,3 +192,75 @@ void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::init(const int dela
     delay_line[i] = *(cint16*)&tmp;
   }
 };
+
+
+template <int SAMPLES, int SHIFT>
+void Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>::filter(
+	input_stream<cint16>* sin, 
+	input_stream<cacc48>* cin,
+	output_stream<cacc48>* cout
+) {
+	v8cint16 taps = *(v8cint16*) weights;
+	v16cint16 data = *(v16cint16*) delay_line;
+	v4cacc48 acc = undef_v4cacc48();
+
+	for (int i = 0; i < SAMPLES / 16; i++) {
+		acc = readincr_v4(cin);
+		PARTIALMAC(0, 0);
+		writeincr_v4(cout, acc);
+		acc = readincr_v4(cin);
+		PARTIALMAC(4, 1);
+		writeincr_v4(cout, acc);
+		acc = readincr_v4(cin);
+		PARTIALMAC(8, 2);
+		writeincr_v4(cout, acc);
+		acc = readincr_v4(cin);
+		PARTIALMAC(12, 3);
+		writeincr_v4(cout, acc);
+	}
+}
+
+template <int SAMPLES, int SHIFT>
+void Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>::init(const int delay) {
+  for (int i = 0; i < delay; i++) get_ss(0);
+	for (int i = 0; i < 16; i++) { //initialize data
+    int tmp = get_ss(0);
+    delay_line[i] = *(cint16*)&tmp;
+  }
+}
+
+
+template <int SAMPLES, int SHIFT>
+void Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>::filter(
+	input_stream<cint16>* sin, 
+	input_stream<cacc48>* cin,
+	output_stream<cint16>* sout
+) {
+	v8cint16 taps = *(v8cint16*) weights;
+	v16cint16 data = *(v16cint16*) delay_line;
+	v4cacc48 acc = undef_v4cacc48();
+
+	for (int i = 0; i < SAMPLES / 16; i++) {
+		acc = readincr_v4(cin);
+		PARTIALMAC(0, 0);
+		writeincr_v4(sout, srs(acc, SHIFT));
+		acc = readincr_v4(cin);
+		PARTIALMAC(4, 1);
+		writeincr_v4(sout, srs(acc, SHIFT));
+		acc = readincr_v4(cin);
+		PARTIALMAC(8, 2);
+		writeincr_v4(sout, srs(acc, SHIFT));
+		acc = readincr_v4(cin);
+		PARTIALMAC(12, 3);
+		writeincr_v4(sout, srs(acc, SHIFT));
+	}
+}
+
+template <int SAMPLES, int SHIFT>
+void Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>::init(const int delay) {
+  for (int i = 0; i < delay; i++) get_ss(0);
+	for (int i = 0; i < 16; i++) { //initialize data
+    int tmp = get_ss(0);
+    delay_line[i] = *(cint16*)&tmp;
+  }
+}
