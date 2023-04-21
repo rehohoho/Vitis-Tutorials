@@ -31,7 +31,6 @@
 		acc = mac4(acc,data,N+4,0x3210,1,taps,4,0x0000,1);\
 		acc = mac4(acc,data,N+6,0x3210,1,taps,6,0x0000,1)
 
-
 // Compute 32/32 partial results for 32 samples
 template <int SAMPLES, int SHIFT>
 void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
@@ -128,7 +127,6 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
   printf("start = %d,end = %d,total = %d\n", cycle_num[0], cycle_num[1], cycle_num[1] - cycle_num[0]);
 };
 
-
 template <int SAMPLES, int SHIFT>
 void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::init() {
   for (int i = 0; i < 32; i++) { //initialize data
@@ -139,7 +137,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::init() {
 
 
 /**
- * Compute 8/32 partial results for 16 samples
+ * Compute 8/32 partial results for all samples in chunks of 16
  * 00	01 ... 06 07
  * 		10 11	... 16 17
  * 			 20 21 ... 26 27
@@ -151,51 +149,38 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::init() {
  * 											70 71 ... 76 77
  * ...
  */
+#define PARTIALMUL(XSTART, DOFFSET) \
+	acc = mul4(data, XSTART, 0x3210, 1, taps, 0, 0x0000, 1); \
+	acc = mac4(acc, data, XSTART+2, 0x3210, 1, taps, 2, 0x0000, 1); \
+	acc = mac4(acc, data, XSTART+4, 0x3210, 1, taps, 4, 0x0000, 1); \
+	data = upd_v(data, DOFFSET, readincr_v4(sin)); \
+	acc = mac4(acc, data, XSTART+6, 0x3210, 1, taps, 6, 0x0000, 1);
+
 template <int SAMPLES, int SHIFT>
-void Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>::filter(
-  input_stream_cint16* sin,
-  output_stream_cint16* sout
+void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::filter(
+  input_stream<cint16>* sin,
+  output_stream<cint16>* sout
 ) {
 	v8cint16 taps = *(v8cint16*) weights;
 	v16cint16 data = *(v16cint16*) delay_line;
 	v4cacc48 acc = undef_v4cacc48();
 
 	for (int i = 0; i < SAMPLES / 16; i++) {
-		acc = mul4(data, 0, 0x3210, 1, taps, 0, 0x0000, 1);
-		acc = mac4(acc, data, 2, 0x3210, 1, taps, 2, 0x0000, 1);
-		acc = mac4(acc, data, 4, 0x3210, 1, taps, 4, 0x0000, 1);
-		data = upd_v(data, 0, readincr_v4(sin));
-		acc = mac4(acc, data, 6, 0x3210, 1, taps, 6, 0x0000, 1);
+		PARTIALMUL(0, 0);
 		writeincr_v4(sout, srs(acc, SHIFT));
-
-		acc = mac4(acc, data, 4, 0x3210, 1, taps, 0, 0x0000, 1);
-		acc = mac4(acc, data, 6, 0x3210, 1, taps, 2, 0x0000, 1);
-		acc = mac4(acc, data, 8, 0x3210, 1, taps, 4, 0x0000, 1);
-		data = upd_v(data, 1, readincr_v4(sin));
-		acc = mac4(acc, data, 10, 0x3210, 1, taps, 6, 0x0000, 1);
+		PARTIALMUL(4, 1);
 		writeincr_v4(sout, srs(acc, SHIFT));
-
-		acc = mac4(acc, data, 8, 0x3210, 1, taps, 0, 0x0000, 1);
-		acc = mac4(acc, data, 10, 0x3210, 1, taps, 2, 0x0000, 1);
-		acc = mac4(acc, data, 12, 0x3210, 1, taps, 4, 0x0000, 1);
-		data = upd_v(data, 1, readincr_v4(sin));
-		acc = mac4(acc, data, 14, 0x3210, 1, taps, 6, 0x0000, 1);
+		PARTIALMUL(8, 2);
 		writeincr_v4(sout, srs(acc, SHIFT));
-
-		acc = mac4(acc, data, 12, 0x3210, 1, taps, 0, 0x0000, 1);
-		acc = mac4(acc, data, 14, 0x3210, 1, taps, 2, 0x0000, 1);
-		acc = mac4(acc, data, 0, 0x3210, 1, taps, 4, 0x0000, 1);
-		data = upd_v(data, 1, readincr_v4(sin));
-		acc = mac4(acc, data, 2, 0x3210, 1, taps, 6, 0x0000, 1);
+		PARTIALMUL(12, 3);
 		writeincr_v4(sout, srs(acc, SHIFT));
 	}
-
 }
 
-
 template <int SAMPLES, int SHIFT>
-void Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>::init() {
-  for (int i = 0; i < 32; i++) { //initialize data
+void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::init(const int delay) {
+  for (int i = 0; i < delay; i++) get_ss(0);
+	for (int i = 0; i < 16; i++) { //initialize data
     int tmp = get_ss(0);
     delay_line[i] = *(cint16*)&tmp;
   }

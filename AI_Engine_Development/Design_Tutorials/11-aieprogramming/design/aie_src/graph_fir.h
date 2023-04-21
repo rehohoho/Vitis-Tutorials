@@ -145,6 +145,13 @@ class VectorIntrinsicFirGraph : public adf::graph {
 
 };
 
+#define GET_PHASE(START,STEP) {\
+	taps[START],taps[START+STEP],taps[START+2*STEP],taps[START+3*STEP],\
+	taps[START+4*STEP],taps[START+5*STEP],taps[START+6*STEP],taps[START+7*STEP]}
+std::vector<cint16> taps4_p0 = std::vector<cint16>(GET_PHASE(0,1));
+std::vector<cint16> taps4_p1 = std::vector<cint16>(GET_PHASE(8,1));
+std::vector<cint16> taps4_p2 = std::vector<cint16>(GET_PHASE(16,1));
+std::vector<cint16> taps4_p3 = std::vector<cint16>(GET_PHASE(24,1));
 
 class MultikernelIntrinsicFirGraph : public adf::graph {
 
@@ -156,7 +163,7 @@ class MultikernelIntrinsicFirGraph : public adf::graph {
     adf::output_plio plout1;
 
     MultikernelIntrinsicFirGraph() { 
-      fir = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>>(taps);
+      fir = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>>(taps4_p0, 0);
       adf::source(fir) = "fir_intrinsics.cc";
 
 #ifdef EXTERNAL_IO
@@ -169,7 +176,6 @@ class MultikernelIntrinsicFirGraph : public adf::graph {
       
       adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
       adf::connect<adf::stream> n1 (fir.out[0], plout1.in[0]);
-      
       adf::runtime<ratio>(fir) = 0.6;
     }
 
