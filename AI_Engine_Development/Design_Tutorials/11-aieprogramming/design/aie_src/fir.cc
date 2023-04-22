@@ -6,7 +6,7 @@ template <int SAMPLES, int SHIFT>
 __attribute__((noinline)) 
 void Scalar_32tap_fir<SAMPLES, SHIFT>::filter(
   input_stream<cint16>* sig_in,
-  output_stream<cint16>* sig_out
+  output_window<cint16>* __restrict sig_out
 ) {
   PROFILE_HEADER;
 
@@ -20,7 +20,8 @@ void Scalar_32tap_fir<SAMPLES, SHIFT>::filter(
     sum = sum >> SHIFT;
     
     // produce one sample per loop iteration
-    writeincr(sig_out, {(int16) sum.real, (int16) sum.imag});
+    cint16 sample = {(int16) sum.real, (int16) sum.imag};
+    window_writeincr(sig_out, sample);
 
     // shift window
     for(int j = 0; j < 32; j++){
@@ -49,7 +50,7 @@ template <int SAMPLES, int SHIFT>
 __attribute__((noinline)) 
 void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
   input_stream<cint16>* sig_in,
-  output_stream<cint16>* sig_out
+  output_window<cint16>* __restrict sig_out
 ) {
   PROFILE_HEADER;
 
@@ -70,7 +71,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
     buff.insert(1, readincr_v<4>(sig_in)); // interleaving loads allow load+MAC in same cycle
     acc = aie::sliding_mac<8, 8>(acc, coe[2], 0, buff, 16);
     acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 24);
-    writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
 
     //performace 2nd 8 samples
     acc = aie::sliding_mul<8, 8>(coe[0], 0, buff, 8);
@@ -79,7 +80,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
     buff.insert(3, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<8, 8>(acc, coe[2], 0, buff, 24);
     acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 0); // uses first 8 new data
-    writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
 
     //performace 3rd 8 samples
     acc = aie::sliding_mul<8, 8>(coe[0], 0, buff, 16);
@@ -88,7 +89,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
     buff.insert(5, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<8, 8>(acc, coe[2], 0, buff, 0);
     acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 8);
-    writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
 
     //performace 4th 8 samples
     acc = aie::sliding_mul<8, 8>(coe[0], 0, buff, 24);
@@ -97,7 +98,7 @@ void Vector_32tap_fir<SAMPLES, SHIFT>::filter(
     buff.insert(7, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<8, 8>(acc, coe[2], 0, buff, 8);
     acc = aie::sliding_mac<8, 8>(acc, coe[3], 0, buff, 16);
-    writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
   }
 
   delay_line = buff;
@@ -222,7 +223,7 @@ __attribute__((noinline))
 void Multikernel_32tap_fir_core3<SAMPLES, SHIFT>::core3(
   input_stream<cint16>* sig_in, 
   input_stream<cacc48>* cascadein,
-  output_stream<cint16>* data_out
+  output_window<cint16>* __restrict sig_out
 ) {
   PROFILE_HEADER;
 
@@ -235,22 +236,22 @@ void Multikernel_32tap_fir_core3<SAMPLES, SHIFT>::core3(
     acc = readincr_v4(cascadein);
     buff.insert(2, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<4, 8>(acc, coe, 0, buff, 0); //8 MAC produce 4 output
-    writeincr_v4(data_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
 
     acc = readincr_v4(cascadein);
     buff.insert(3, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<4, 8>(acc, coe, 0, buff, 4);
-    writeincr_v4(data_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
 
     acc = readincr_v4(cascadein);
     buff.insert(0, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<4, 8>(acc, coe, 0, buff, 8);
-    writeincr_v4(data_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
 
     acc = readincr_v4(cascadein);
     buff.insert(1, readincr_v<4>(sig_in));
     acc = aie::sliding_mac<4, 8>(acc, coe, 0, buff, 12);
-    writeincr_v4(data_out, acc.to_vector<cint16>(SHIFT));
+    window_writeincr(sig_out, acc.to_vector<cint16>(SHIFT));
   }
   delay_line = buff;
 

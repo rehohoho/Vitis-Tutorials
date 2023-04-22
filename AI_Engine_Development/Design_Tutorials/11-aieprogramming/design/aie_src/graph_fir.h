@@ -39,7 +39,7 @@ class ScalarFirGraph : public adf::graph {
 #endif
       
       adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
-      adf::connect<adf::stream> n1 (fir.out[0], plout1.in[0]);
+      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout1.in[0]);
       
       adf::runtime<ratio>(fir) = 0.6;
     }
@@ -69,8 +69,7 @@ class VectorFirGraph : public adf::graph {
 #endif
       
       adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
-      adf::connect<adf::stream> n1 (fir.out[0], plout1.in[0]);
-      
+      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout1.in[0]);
       adf::runtime<ratio>(fir) = 0.6;
     }
 
@@ -113,7 +112,7 @@ class MultikernelFirGraph : public adf::graph {
         adf::connect<adf::stream> (plin[i].out[0], k[i].in[0]);      
       for (int i = 0 ; i < 3; i++)
         adf::connect<adf::cascade> (k[i].out[0], k[i+1].in[1]);
-      adf::connect<adf::stream> (k[3].out[0], plout1.in[0]);
+      adf::connect<adf::window<SAMPLES*4>> (k[3].out[0], plout1.in[0]);
       
       for (int i = 0; i < 4; i++) 
         adf::runtime<ratio>(k[i]) = 0.6;

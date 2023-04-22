@@ -22,7 +22,7 @@ class Scalar_32tap_fir {
     __attribute__((noinline)) 
     void filter(
       input_stream<cint16>* sig_in, 
-      output_stream<cint16>* sig_out);
+      output_window<cint16>* __restrict sig_out);
     
     static void registerKernelClass() {
       REGISTER_FUNCTION(Scalar_32tap_fir::filter);
@@ -48,7 +48,7 @@ class Vector_32tap_fir {
     __attribute__((noinline)) 
     void filter(
       input_stream<cint16>* sig_in, 
-      output_stream<cint16>* sig_out);
+      output_window<cint16>* __restrict sig_out);
     
     static void registerKernelClass() {
       REGISTER_FUNCTION(Vector_32tap_fir::filter);
@@ -136,7 +136,7 @@ class Multikernel_32tap_fir_core3 {
     void core3(
       input_stream<cint16>* sig_in, 
       input_stream<cacc48>* cascadein,
-      output_stream<cint16>* data_out);
+      output_window<cint16>* __restrict sig_out);
     
     void core3_init(const int delay);
 
