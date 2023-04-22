@@ -44,11 +44,11 @@ int main(int argc, char ** argv) {
 int main(int argc, char ** argv) {
 	
 	// adfCheck(sfir.init(), "init sfir");
-  // get_graph_throughput_by_port(sfir, "plin1", sfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
+  // get_graph_throughput_by_port(sfir, "plin1", sfir.plin[0], SAMPLES, sizeof(cint16), ITER_CNT);
 	// adfCheck(sfir.end(), "end sfir");
 
   adfCheck(vfir.init(), "init vfir");
-  get_graph_throughput_by_port(vfir, "plin1", vfir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
+  get_graph_throughput_by_port(vfir, "plin1", vfir.plin[0], SAMPLES, sizeof(cint16), ITER_CNT);
 	adfCheck(vfir.end(), "end vfir");
 
   adfCheck(mfir.init(), "init mfir");
@@ -56,7 +56,7 @@ int main(int argc, char ** argv) {
 	adfCheck(mfir.end(), "end mfir");
 
   adfCheck(vifir.init(), "init vifir");
-  get_graph_throughput_by_port(vifir, "plin1", vifir.plin1, SAMPLES, sizeof(cint16), ITER_CNT);
+  get_graph_throughput_by_port(vifir, "plin1", vifir.plin[0], SAMPLES, sizeof(cint16), ITER_CNT);
 	adfCheck(vifir.end(), "end vifir");
   
   adfCheck(mifir.init(), "init mifir");

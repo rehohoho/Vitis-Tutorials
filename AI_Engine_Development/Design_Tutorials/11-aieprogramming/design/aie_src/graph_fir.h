@@ -27,23 +27,23 @@ class ScalarFirGraph : public adf::graph {
     adf::kernel fir;
 
   public:
-    adf::input_plio plin1;
-    adf::output_plio plout1;
+    adf::input_plio plin[1];
+    adf::output_plio plout[1];
 
     ScalarFirGraph() { 
       fir = adf::kernel::create_object<Scalar_32tap_fir<SAMPLES, SHIFT>>(taps);
       adf::source(fir) = "fir.cc";
 
 #ifdef EXTERNAL_IO
-      plin1 = adf::input_plio::create("sfir_plin1", adf::plio_64_bits);
-      plout1 = adf::output_plio::create("sfir_plout1", adf::plio_64_bits);
+      plin[0] = adf::input_plio::create("sfir_plin0", adf::plio_64_bits);
+      plout[0] = adf::output_plio::create("sfir_plout0", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("sfir_plin1", adf::plio_64_bits, "fir_100samples_rand.txt");
-      plout1 = adf::output_plio::create("sfir_plout1", adf::plio_64_bits, "scalar_fir.txt");
+      plin[0] = adf::input_plio::create("sfir_plin0", adf::plio_64_bits, "fir_100samples_rand.txt");
+      plout[0] = adf::output_plio::create("sfir_plout0", adf::plio_64_bits, "scalar_fir.txt");
 #endif
       
-      adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
-      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout1.in[0]);
+      adf::connect<adf::stream> n0 (plin[0].out[0], fir.in[0]);
+      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout[0].in[0]);
       
       adf::runtime<ratio>(fir) = 0.6;
     }
@@ -57,23 +57,23 @@ class VectorFirGraph : public adf::graph {
     adf::kernel fir;
 
   public:
-    adf::input_plio plin1;
-    adf::output_plio plout1;
+    adf::input_plio plin[1];
+    adf::output_plio plout[1];
 
     VectorFirGraph() { 
       fir = adf::kernel::create_object<Vector_32tap_fir<SAMPLES, SHIFT>>(taps);
       adf::source(fir) = "fir.cc";
 
 #ifdef EXTERNAL_IO
-      plin1 = adf::input_plio::create("vfir_plin1", adf::plio_64_bits);
-      plout1 = adf::output_plio::create("vfir_plout1", adf::plio_64_bits);
+      plin[0] = adf::input_plio::create("vfir_plin0", adf::plio_64_bits);
+      plout[0] = adf::output_plio::create("vfir_plout0", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("vfir_plin1", adf::plio_64_bits, "fir_100samples_rand.txt");
-      plout1 = adf::output_plio::create("vfir_plout1", adf::plio_64_bits, "vector_fir.txt");
+      plin[0] = adf::input_plio::create("vfir_plin0", adf::plio_64_bits, "fir_100samples_rand.txt");
+      plout[0] = adf::output_plio::create("vfir_plout0", adf::plio_64_bits, "vector_fir.txt");
 #endif
       
-      adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
-      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout1.in[0]);
+      adf::connect<adf::stream> n0 (plin[0].out[0], fir.in[0]);
+      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout[0].in[0]);
       adf::runtime<ratio>(fir) = 0.6;
     }
 
@@ -87,7 +87,7 @@ class MultikernelFirGraph : public adf::graph {
 
   public:
     adf::input_plio plin[4];
-    adf::output_plio plout1;
+    adf::output_plio plout[1];
 
     MultikernelFirGraph() { 
       k[0] = adf::kernel::create_object<Multikernel_32tap_fir_core0<SAMPLES, SHIFT>>(taps, 0);
@@ -101,18 +101,18 @@ class MultikernelFirGraph : public adf::graph {
 #ifdef EXTERNAL_IO
       for (int i = 0; i < 4; i++) 
         plin[i] = adf::input_plio::create("mfir_plin"+std::to_string(i), adf::plio_64_bits);
-      plout1 = adf::output_plio::create("mfir_plout1", adf::plio_64_bits);
+      plout[0] = adf::output_plio::create("mfir_plout0", adf::plio_64_bits);
 #else
       for (int i = 0; i < 4; i++) 
         plin[i] = adf::input_plio::create("mfir_plin"+std::to_string(i), adf::plio_64_bits, "fir_100samples_rand.txt");
-      plout1 = adf::output_plio::create("mfir_plout1", adf::plio_64_bits, "multikernel_fir.txt");
+      plout[0] = adf::output_plio::create("mfir_plout0", adf::plio_64_bits, "multikernel_fir.txt");
 #endif
       
       for (int i = 0; i < 4; i++) 
         adf::connect<adf::stream> (plin[i].out[0], k[i].in[0]);      
       for (int i = 0 ; i < 3; i++)
         adf::connect<adf::cascade> (k[i].out[0], k[i+1].in[1]);
-      adf::connect<adf::window<SAMPLES*4>> (k[3].out[0], plout1.in[0]);
+      adf::connect<adf::window<SAMPLES*4>> (k[3].out[0], plout[0].in[0]);
       
       for (int i = 0; i < 4; i++) 
         adf::runtime<ratio>(k[i]) = 0.6;
@@ -127,23 +127,23 @@ class VectorIntrinsicFirGraph : public adf::graph {
     adf::kernel fir;
 
   public:
-    adf::input_plio plin1;
-    adf::output_plio plout1;
+    adf::input_plio plin[1];
+    adf::output_plio plout[1];
 
     VectorIntrinsicFirGraph() { 
       fir = adf::kernel::create_object<Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>>(taps);
       adf::source(fir) = "fir_intrinsics.cc";
 
 #ifdef EXTERNAL_IO
-      plin1 = adf::input_plio::create("vifir_plin1", adf::plio_64_bits);
-      plout1 = adf::output_plio::create("vifir_plout1", adf::plio_64_bits);
+      plin[0] = adf::input_plio::create("vifir_plin0", adf::plio_64_bits);
+      plout[0] = adf::output_plio::create("vifir_plout0", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("vifir_plin1", adf::plio_64_bits, "fir_100samples_rand.txt");
-      plout1 = adf::output_plio::create("vifir_plout1", adf::plio_64_bits, "vector_intrinsics_fir.txt");
+      plin[0] = adf::input_plio::create("vifir_plin0", adf::plio_64_bits, "fir_100samples_rand.txt");
+      plout[0] = adf::output_plio::create("vifir_plout0", adf::plio_64_bits, "vector_intrinsics_fir.txt");
 #endif
       
-      adf::connect<adf::stream> n0 (plin1.out[0], fir.in[0]);
-      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout1.in[0]);
+      adf::connect<adf::stream> n0 (plin[0].out[0], fir.in[0]);
+      adf::connect<adf::window<SAMPLES*4>> n1 (fir.out[0], plout[0].in[0]);
       
       adf::runtime<ratio>(fir) = 0.6;
     }
@@ -162,7 +162,7 @@ class MultikernelIntrinsicFirGraph : public adf::graph {
 
   public:
     adf::input_plio plin[4];
-    adf::output_plio plout1;
+    adf::output_plio plout[1];
 
     MultikernelIntrinsicFirGraph() { 
       k[0] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>>(taps4_p0, 0);
@@ -176,18 +176,18 @@ class MultikernelIntrinsicFirGraph : public adf::graph {
 #ifdef EXTERNAL_IO
       for (int i = 0; i < 4; i++)
         plin[i] = adf::input_plio::create("mifir_plin"+std::to_string(i), adf::plio_64_bits);
-      plout1 = adf::output_plio::create("mifir_plout1", adf::plio_64_bits);
+      plout[0] = adf::output_plio::create("mifir_plout0", adf::plio_64_bits);
 #else
       for (int i = 0; i < 4; i++)
         plin[i] = adf::input_plio::create("mifir_plin"+std::to_string(i), adf::plio_64_bits, "fir_100samples_rand.txt");
-      plout1 = adf::output_plio::create("mifir_plout1", adf::plio_64_bits, "multikernel_intrinsics_fir.txt");
+      plout[0] = adf::output_plio::create("mifir_plout0", adf::plio_64_bits, "multikernel_intrinsics_fir.txt");
 #endif
       
       for (int i = 0; i < 4; i++)
         adf::connect<adf::stream> (plin[i].out[0], k[i].in[0]);
       for (int i = 0; i < 3; i++)
         adf::connect<adf::cascade> (k[i].out[0], k[i+1].in[1]);
-      adf::connect<adf::window<SAMPLES*4>> (k[3].out[0], plout1.in[0]);
+      adf::connect<adf::window<SAMPLES*4>> (k[3].out[0], plout[0].in[0]);
       
       for (int i = 0; i < 4; i++)
         adf::runtime<ratio>(k[i]) = 0.6;
