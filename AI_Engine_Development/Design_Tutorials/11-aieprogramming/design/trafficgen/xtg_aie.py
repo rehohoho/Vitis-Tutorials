@@ -13,13 +13,18 @@ from xilinx_xtlm import ipc_axis_master_util, ipc_axis_slave_util, xtlm_ipc
 
 
 # See https://docs.python.org/3/library/struct.html#format-characters
-def cint16_tobytes(real: List[int], im: List[int]):
-  rVec = np.real(real).astype(np.int16)
-  iVec = np.imag(im).astype(np.int16)
-  return rVec.tolist(), iVec.tolist()
+# Expects [real, imag, real, imag, ...], each in cint16
+# Combines pairs into 2's complement data
+def cint16_tobytes(data: List[int]):
+  if len(data) % 2 != 0:
+    return ValueError(f"Expected even number of values, found line {data}.")
+  data = np.real(data)
+  real = ((int('0xFFFF',16) + int('0x1',16)) + data[::2]) & 0xFFFF
+  imag = ((int('0xFFFF',16) + int('0x1',16)) + data[1::2]) & 0xFFFF
+  return real | imag << 16
 
 def cint16_fstr(payload_len_in_bytes: int):
-  return "<"+str(payload_len_in_bytes//2)+"h" 
+  return "<"+str(payload_len_in_bytes//4)+"i" 
 
 def int8_tobytes(data: List[int]):
   return np.real(data).astype(np.int8)
@@ -58,7 +63,7 @@ class ExternalTraffic:
   
   def __init__(self,
                master_list: List[Tuple[str, str, int, str]],
-               slave_list: List[Tuple[str, str, str]]):
+               slave_list: List[Tuple[str, str, str, int]]):
     
     self.ipc_masters = []
     for ipc_name, file_path, bitwidth, dtype in master_list:
@@ -67,10 +72,10 @@ class ExternalTraffic:
       logging.info(f"Creating ipc_axis_master_util for {ipc_name}...")
 
     self.ipc_slaves = []
-    for ipc_name, file_path, bitwidth, dtype in slave_list:
+    for ipc_name, file_path, bitwidth, dtype, recv_len in slave_list:
       parent, child = mp.Pipe()
       self.ipc_slaves.append(
-        (ipc_axis_slave_util(ipc_name), parent, child, ipc_name, file_path, bitwidth, dtype))
+        (ipc_axis_slave_util(ipc_name), parent, child, ipc_name, file_path, bitwidth, dtype, recv_len))
       logging.info(f"Creating ipc_axis_slave_util for {ipc_name}...")
 
   def send_to_aie(self,
@@ -103,24 +108,22 @@ class ExternalTraffic:
           transport(payload)
         except Exception as e:
           logging.info(f"[{ipc_name}]: {e}")
-          logging.info(f"[{ipc_name}]: {format_string} {packet} {file_path} {line} {i}")
+          logging.info(f"[{ipc_name}]: fmtstr {format_string}; packet {packet};" + \
+                       f" file_path {file_path}; line {line}; i {i}")
 
   def recv_fr_aie(self,
                   ipc_name: str,
                   dtype: str,
                   ipc_slave: ipc_axis_slave_util,
-                  child: Any): # mp.connection.Connection
+                  child: Any, # mp.connection.Connection
+                  recv_len: int): 
     """Receiving data from AIE to memory"""
     get_format_string = get_format_string_callable(dtype)
     rxData = []
     lines = 0
 
-    while True:
-      try:
-        payload = ipc_slave.sample_transaction()
-      except:
-        break
-      
+    while len(rxData) < recv_len:
+      payload = ipc_slave.sample_transaction()
       formatString = get_format_string(len(payload.data))
       rxData += struct.unpack(formatString, payload.data)
       logging.info(f"[{ipc_name}]: read lines #{lines}")
@@ -128,6 +131,29 @@ class ExternalTraffic:
       lines += 1
       
     child.send(rxData)
+
+  def write(self,
+            bitwidth: int,
+            dtype: str,
+            file_path: str,
+            data: List[str]):
+    repeat_count = bitwidth // int(re.findall(r'\d+', dtype)[0])
+    if "c" in dtype:
+      repeat_count // 2
+    
+    if dtype == "cint16":
+      raw = data
+      data = list()
+      for d in raw:
+        data += [np.int16(d & 0xFFFF), d >> 16]
+    
+    tmp = ""
+    with open(file_path, 'w') as f:
+      for i, d in enumerate(data):
+        tmp += f"{d} "
+        if i % repeat_count == repeat_count - 1:
+          f.write(f"{tmp}\n")
+          tmp = ""
 
   def run(self):
     logging.info("Begin run...")
@@ -141,9 +167,9 @@ class ExternalTraffic:
       logging.info(f"Running master {ipc_name}")
 
     slave_tasks = []
-    for ipc_slave, parent, child, ipc_name, file_path, bitwidth, dtype in self.ipc_slaves:
+    for ipc_slave, parent, child, ipc_name, file_path, bitwidth, dtype, recv_len in self.ipc_slaves:
       t = mp.Process(target=self.recv_fr_aie, 
-                     args=(ipc_name, dtype, ipc_slave, child))
+                     args=(ipc_name, dtype, ipc_slave, child, recv_len))
       t.start()
       slave_tasks.append((t, parent, ipc_name, file_path, bitwidth, dtype))
       logging.info(f"Running slave {ipc_name}")
@@ -151,17 +177,7 @@ class ExternalTraffic:
     for slave_task, parent, ipc_name, file_path, bitwidth, dtype in slave_tasks:
       data = parent.recv()
       slave_task.join()
-
-      repeat_count = bitwidth // int(re.findall(r'\d+', dtype)[0])
-      
-      tmp = ""
-      with open(file_path, 'w') as f:
-        for i, d in enumerate(data):
-          tmp += f"{d} "
-          if i % repeat_count == repeat_count - 1:
-            f.write(f"{tmp}\n")
-            tmp = ""
-
+      self.write(bitwidth, dtype, file_path, data)
       logging.info(f"Slave {ipc_name} finished. Written to {file_path}")
     
     for master_task, ipc_name in master_tasks:
@@ -179,15 +195,31 @@ if __name__ == "__main__":
   logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
   master_list = [
-    ("smul_plin1", f"{args.input_dir}/va_10samples.txt", 64, "int32"),
-    ("smul_plin2", f"{args.input_dir}/vb_10samples.txt", 64, "int32"),
-    ("vmul_plin1", f"{args.input_dir}/va_10samples.txt", 64, "int32"),
-    ("vmul_plin2", f"{args.input_dir}/vb_10samples.txt", 64, "int32"),
+    # ("smul_plin1", f"{args.input_dir}/va_10samples.txt", 64, "int32"),
+    # ("smul_plin2", f"{args.input_dir}/vb_10samples.txt", 64, "int32"),
+    # ("vmul_plin1", f"{args.input_dir}/va_10samples.txt", 64, "int32"),
+    # ("vmul_plin2", f"{args.input_dir}/vb_10samples.txt", 64, "int32"),
+    # ("sfir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("vfir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mfir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mfir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mfir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mfir_plin4", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("vifir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mifir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mifir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mifir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    ("mifir_plin4", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
   ]
 
   slave_list = [
-    ("smul_plout1", f"{args.output_dir}/scalar_mul.txt", 64, "int32"), 
-    ("vmul_plout1", f"{args.output_dir}/vector_mul.txt", 64, "int32"), 
+    # ("smul_plout1", f"{args.output_dir}/scalar_mul.txt", 64, "int32", 512), 
+    # ("vmul_plout1", f"{args.output_dir}/vector_mul.txt", 64, "int32", 512), 
+    # ("sfir_plout1", f"{args.output_dir}/sfir.txt", 64, "cint16", 64),
+    ("vfir_plout1", f"{args.output_dir}/vfir.txt", 64, "cint16", 64),
+    ("mfir_plout1", f"{args.output_dir}/mfir.txt", 64, "cint16", 64),
+    ("vifir_plout1", f"{args.output_dir}/vifir.txt", 64, "cint16", 64),
+    ("mifir_plout1", f"{args.output_dir}/mifir.txt", 64, "cint16", 64),
   ]
   
   design = ExternalTraffic(master_list, slave_list)
