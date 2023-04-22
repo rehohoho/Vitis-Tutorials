@@ -91,7 +91,7 @@ class ExternalTraffic:
 
     with open(file_path) as f:
       L = f.readlines()
-      logging.info(f"[{ipc_name}]: Sending {len(L)} int32 data...")
+      logging.info(f"[{ipc_name}]: Sending {len(L)} {dtype} data...")
       
       for i, line in enumerate(L):
         values = re.findall(r'-?\d+', line)

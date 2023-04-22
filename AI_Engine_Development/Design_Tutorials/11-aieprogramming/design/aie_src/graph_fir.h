@@ -16,6 +16,10 @@ std::vector<cint16> taps = std::vector<cint16>({
   {0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}, {6, 6}, {7, 7}
 });
 
+#define GET_PHASE(START,STEP) {\
+	taps[START],taps[START+STEP],taps[START+2*STEP],taps[START+3*STEP],\
+	taps[START+4*STEP],taps[START+5*STEP],taps[START+6*STEP],taps[START+7*STEP]}
+
 
 class ScalarFirGraph : public adf::graph {
 
@@ -34,7 +38,7 @@ class ScalarFirGraph : public adf::graph {
       plin1 = adf::input_plio::create("sfir_plin1", adf::plio_64_bits);
       plout1 = adf::output_plio::create("sfir_plout1", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("sfir_plin1", adf::plio_64_bits, "fir_100samples.txt");
+      plin1 = adf::input_plio::create("sfir_plin1", adf::plio_64_bits, "fir_100samples_rand.txt");
       plout1 = adf::output_plio::create("sfir_plout1", adf::plio_64_bits, "scalar_fir.txt");
 #endif
       
@@ -64,7 +68,7 @@ class VectorFirGraph : public adf::graph {
       plin1 = adf::input_plio::create("vfir_plin1", adf::plio_64_bits);
       plout1 = adf::output_plio::create("vfir_plout1", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("vfir_plin1", adf::plio_64_bits, "fir_100samples.txt");
+      plin1 = adf::input_plio::create("vfir_plin1", adf::plio_64_bits, "fir_100samples_rand.txt");
       plout1 = adf::output_plio::create("vfir_plout1", adf::plio_64_bits, "vector_fir.txt");
 #endif
       
@@ -95,16 +99,12 @@ class MultikernelFirGraph : public adf::graph {
         adf::source(k[i]) = "fir.cc";
 
 #ifdef EXTERNAL_IO
-      plin[0] = adf::input_plio::create("mfir_plin1", adf::plio_64_bits);
-      plin[1] = adf::input_plio::create("mfir_plin2", adf::plio_64_bits);
-      plin[2] = adf::input_plio::create("mfir_plin3", adf::plio_64_bits);
-      plin[3] = adf::input_plio::create("mfir_plin4", adf::plio_64_bits);
+      for (int i = 0; i < 4; i++) 
+        plin[i] = adf::input_plio::create("mfir_plin"+std::to_string(i), adf::plio_64_bits);
       plout1 = adf::output_plio::create("mfir_plout1", adf::plio_64_bits);
 #else
-      plin[0] = adf::input_plio::create("mfir_plin1", adf::plio_64_bits, "fir_100samples.txt");
-      plin[1] = adf::input_plio::create("mfir_plin2", adf::plio_64_bits, "fir_100samples.txt");
-      plin[2] = adf::input_plio::create("mfir_plin3", adf::plio_64_bits, "fir_100samples.txt");
-      plin[3] = adf::input_plio::create("mfir_plin4", adf::plio_64_bits, "fir_100samples.txt");
+      for (int i = 0; i < 4; i++) 
+        plin[i] = adf::input_plio::create("mfir_plin"+std::to_string(i), adf::plio_64_bits, "fir_100samples_rand.txt");
       plout1 = adf::output_plio::create("mfir_plout1", adf::plio_64_bits, "multikernel_fir.txt");
 #endif
       
@@ -138,7 +138,7 @@ class VectorIntrinsicFirGraph : public adf::graph {
       plin1 = adf::input_plio::create("vifir_plin1", adf::plio_64_bits);
       plout1 = adf::output_plio::create("vifir_plout1", adf::plio_64_bits);
 #else
-      plin1 = adf::input_plio::create("vifir_plin1", adf::plio_64_bits, "fir_100samples.txt");
+      plin1 = adf::input_plio::create("vifir_plin1", adf::plio_64_bits, "fir_100samples_rand.txt");
       plout1 = adf::output_plio::create("vifir_plout1", adf::plio_64_bits, "vector_intrinsics_fir.txt");
 #endif
       
@@ -150,18 +150,15 @@ class VectorIntrinsicFirGraph : public adf::graph {
 
 };
 
-#define GET_PHASE(START,STEP) {\
-	taps[START],taps[START+STEP],taps[START+2*STEP],taps[START+3*STEP],\
-	taps[START+4*STEP],taps[START+5*STEP],taps[START+6*STEP],taps[START+7*STEP]}
-std::vector<cint16> taps4_p0 = std::vector<cint16>(GET_PHASE(0,1));
-std::vector<cint16> taps4_p1 = std::vector<cint16>(GET_PHASE(8,1));
-std::vector<cint16> taps4_p2 = std::vector<cint16>(GET_PHASE(16,1));
-std::vector<cint16> taps4_p3 = std::vector<cint16>(GET_PHASE(24,1));
 
 class MultikernelIntrinsicFirGraph : public adf::graph {
 
   private:
     adf::kernel k[4];
+    std::vector<cint16> taps4_p0 = std::vector<cint16>(GET_PHASE(0,1));
+    std::vector<cint16> taps4_p1 = std::vector<cint16>(GET_PHASE(8,1));
+    std::vector<cint16> taps4_p2 = std::vector<cint16>(GET_PHASE(16,1));
+    std::vector<cint16> taps4_p3 = std::vector<cint16>(GET_PHASE(24,1));
 
   public:
     adf::input_plio plin[4];
@@ -177,16 +174,12 @@ class MultikernelIntrinsicFirGraph : public adf::graph {
         adf::source(k[i]) = "fir_intrinsics.cc";
 
 #ifdef EXTERNAL_IO
-      plin[0] = adf::input_plio::create("mifir_plin1", adf::plio_64_bits);
-      plin[1] = adf::input_plio::create("mifir_plin2", adf::plio_64_bits);
-      plin[2] = adf::input_plio::create("mifir_plin3", adf::plio_64_bits);
-      plin[3] = adf::input_plio::create("mifir_plin4", adf::plio_64_bits);
+      for (int i = 0; i < 4; i++)
+        plin[i] = adf::input_plio::create("mifir_plin"+std::to_string(i), adf::plio_64_bits);
       plout1 = adf::output_plio::create("mifir_plout1", adf::plio_64_bits);
 #else
-      plin[0] = adf::input_plio::create("mifir_plin1", adf::plio_64_bits, "fir_100samples.txt");
-      plin[1] = adf::input_plio::create("mifir_plin2", adf::plio_64_bits, "fir_100samples.txt");
-      plin[2] = adf::input_plio::create("mifir_plin3", adf::plio_64_bits, "fir_100samples.txt");
-      plin[3] = adf::input_plio::create("mifir_plin4", adf::plio_64_bits, "fir_100samples.txt");
+      for (int i = 0; i < 4; i++)
+        plin[i] = adf::input_plio::create("mifir_plin"+std::to_string(i), adf::plio_64_bits, "fir_100samples_rand.txt");
       plout1 = adf::output_plio::create("mifir_plout1", adf::plio_64_bits, "multikernel_intrinsics_fir.txt");
 #endif
       
@@ -198,6 +191,86 @@ class MultikernelIntrinsicFirGraph : public adf::graph {
       
       for (int i = 0; i < 4; i++)
         adf::runtime<ratio>(k[i]) = 0.6;
+    }
+
+};
+
+
+// not polyphase, see Design_Tutorials/02 for polyphased, it works but WIP
+class StreamIntrinsicFirGraph : public adf::graph {
+
+  private:
+    adf::kernel k[4][4];
+    std::vector<cint16> taps4_p0 = std::vector<cint16>(GET_PHASE(0,1));
+    std::vector<cint16> taps4_p1 = std::vector<cint16>(GET_PHASE(8,1));
+    std::vector<cint16> taps4_p2 = std::vector<cint16>(GET_PHASE(16,1));
+    std::vector<cint16> taps4_p3 = std::vector<cint16>(GET_PHASE(24,1));
+  
+  public:
+    adf::input_plio plin[4];
+    adf::output_plio plout[4];
+
+    StreamIntrinsicFirGraph() {
+      // -->
+      k[0][0] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES,SHIFT>>(taps4_p0, 0);
+      k[0][1] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p1, 8);
+      k[0][2] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p2, 16);
+      k[0][3] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core3<SAMPLES,SHIFT>>(taps4_p3, 24);
+      // <--
+      k[1][0] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES,SHIFT>>(taps4_p3, 24);
+      k[1][1] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p0, 16);
+      k[1][2] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p1, 8);
+      k[1][3] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core3<SAMPLES,SHIFT>>(taps4_p2, 0);
+      // -->
+      k[2][0] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES,SHIFT>>(taps4_p2, 24);
+      k[2][1] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p3, 16);
+      k[2][2] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p0, 8);
+      k[2][3] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core3<SAMPLES,SHIFT>>(taps4_p1, 0);
+      // <--
+      k[3][0] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core0<SAMPLES,SHIFT>>(taps4_p1, 24);
+      k[3][1] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p2, 16);
+      k[3][2] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core1<SAMPLES,SHIFT>>(taps4_p3, 8);
+      k[3][3] = adf::kernel::create_object<Multikernel_32tap_fir_intrinsics_core3<SAMPLES,SHIFT>>(taps4_p0, 0);
+
+      for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+          source(k[i][j]) = "fir_intrinsics.cc";
+          adf::runtime<ratio>(k[i][j]) = 0.6;
+        }
+      }
+
+      for (int i = 0; i < 4; i++) {
+        int j = (i % 2 ? 28 : 25);
+        adf::location<adf::kernel>(k[i][0]) = adf::tile(j, i);
+      }
+
+#ifdef EXTERNAL_IO
+      for (int i = 0; i < 4; i++) {
+        plin[i] = adf::input_plio::create("x4fir_plin"+std::to_string(i), adf::plio_64_bits);
+        plout[i] = adf::output_plio::create("x4fir_plout"+std::to_string(i), adf::plio_64_bits);
+      }
+#else
+      for (int i = 0; i < 4; i++) {
+        plin[i] = adf::input_plio::create("x4fir_plin"+std::to_string(i), adf::plio_64_bits, "fir_100samples_rand.txt");
+        plout[i] = adf::output_plio::create("x4fir_plout"+std::to_string(i), adf::plio_64_bits, "x4fir_"+std::to_string(i)+".txt");
+      }
+#endif
+
+      for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 3; j++)
+          adf::connect<adf::cascade> (k[i][j].out[0], k[i][j+1].in[1]);
+        adf::connect<adf::window<SAMPLES*4>> (k[i][3].out[0], plout[i].in[0]);
+      }
+      
+      for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++) {
+          // adf::connect<adf::stream> (plin[i].out[0], k[i][j].in[0]);
+          int col = (i % 2 ? 3-j : j); // kernel col is inverted on odd rows
+          int fiforow = i;  // Each Kernel is served by an independent FIFO
+          adf::connect<adf::stream> n0 (plin[j].out[0], k[i][col].in[0]);
+          adf::fifo_depth(n0) = 512;
+          adf::location<adf::fifo>(n0) = dma_fifo(adf::aie_tile, 25+j, fiforow, 0x0000, 512);
+        }
     }
 
 };

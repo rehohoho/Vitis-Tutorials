@@ -7,6 +7,7 @@ VectorFirGraph vfir;
 MultikernelFirGraph mfir;
 VectorIntrinsicFirGraph vifir;
 MultikernelIntrinsicFirGraph mifir;
+StreamIntrinsicFirGraph x4fir;
 
 #ifdef __X86SIM__
 int main(int argc, char ** argv) {
@@ -29,6 +30,10 @@ int main(int argc, char ** argv) {
   adfCheck(mifir.init(), "init mifir");
   adfCheck(mifir.run(1), "run mifir");
 	adfCheck(mifir.end(), "end mifir");
+
+  adfCheck(x4fir.init(), "init x4fir");
+  adfCheck(x4fir.run(1), "run x4fir");
+	adfCheck(x4fir.end(), "end x4fir");
 
   return 0;
 }
@@ -57,6 +62,10 @@ int main(int argc, char ** argv) {
   adfCheck(mifir.init(), "init mifir");
   get_graph_throughput_by_port(mifir, "plin1", mifir.plin[0], SAMPLES, sizeof(cint16), ITER_CNT);
 	adfCheck(mifir.end(), "end mifir");
+
+  adfCheck(x4fir.init(), "init x4fir");
+  get_graph_throughput_by_port(x4fir, "plin1", x4fir.plin[0], SAMPLES, sizeof(cint16), ITER_CNT);
+	adfCheck(x4fir.end(), "end x4fir");
   return 0;
 }
 #endif
