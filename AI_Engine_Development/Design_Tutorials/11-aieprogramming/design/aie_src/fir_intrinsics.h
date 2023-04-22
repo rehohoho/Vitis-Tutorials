@@ -21,7 +21,7 @@ class Vector_32tap_fir_intrinsics {
 
     void filter(
       input_stream<cint16>* sin, 
-      output_stream<cint16>* sout);
+      output_window<cint16>* __restrict sout);
     
     static void registerKernelClass() {
       REGISTER_FUNCTION(Vector_32tap_fir_intrinsics::filter);
@@ -107,7 +107,7 @@ class Multikernel_32tap_fir_intrinsics_core3 {
     void filter(
       input_stream<cint16>* sin, 
       input_stream<cacc48>* cin,
-      output_stream<cint16>* sout);
+      output_window<cint16>* __restrict sout);
     
     static void registerKernelClass() {
       REGISTER_FUNCTION(Multikernel_32tap_fir_intrinsics_core3::filter);

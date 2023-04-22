@@ -35,7 +35,7 @@
 template <int SAMPLES, int SHIFT>
 void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
   input_stream_cint16* sin,
-  output_stream_cint16* sout
+  output_window<cint16>* __restrict sout
 ) {
   PROFILE_HEADER;
 
@@ -57,7 +57,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(16);
 		data = upd_v(data, 0, readincr_v4(sin));
 		MACMAC(24);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
 		MULMAC(4);
@@ -65,7 +65,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(20);
 		data = upd_v(data, 1, readincr_v4(sin));
 		MACMAC(28);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
 		MULMAC(8);
@@ -73,7 +73,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(24);
 		data = upd_v(data, 2, readincr_v4(sin));
 		MACMAC(0);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
 		MULMAC(12);
@@ -81,7 +81,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(28);
 		data = upd_v(data, 3, readincr_v4(sin));
 		MACMAC(4);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
 		MULMAC(16);
@@ -89,7 +89,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(0);
 		data = upd_v(data, 4, readincr_v4(sin));
 		MACMAC(8);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
 		MULMAC(20);
@@ -97,7 +97,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(4);
 		data = upd_v(data, 5, readincr_v4(sin));
 		MACMAC(12);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
 		MULMAC(24);
@@ -105,7 +105,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(8);
 		data = upd_v(data, 6, readincr_v4(sin));
 		MACMAC(16);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 
 		MULMAC(28);
@@ -113,7 +113,7 @@ void Vector_32tap_fir_intrinsics<SAMPLES, SHIFT>::filter(
 		MACMAC(12);
 		data = upd_v(data, 7, readincr_v4(sin));
 		MACMAC(20);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		coeff -= 4;
 	}
 
@@ -239,7 +239,7 @@ template <int SAMPLES, int SHIFT>
 void Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>::filter(
 	input_stream<cint16>* sin, 
 	input_stream<cacc48>* cin,
-	output_stream<cint16>* sout
+  output_window<cint16>* __restrict sout
 ) {
 	PROFILE_HEADER;
 	v8cint16 taps = *(v8cint16*) weights;
@@ -252,16 +252,16 @@ void Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>::filter(
 	{
 		acc = readincr_v4(cin);
 		PARTIALMAC(0, 0);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		acc = readincr_v4(cin);
 		PARTIALMAC(4, 1);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		acc = readincr_v4(cin);
 		PARTIALMAC(8, 2);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 		acc = readincr_v4(cin);
 		PARTIALMAC(12, 3);
-		writeincr_v4(sout, srs(acc, SHIFT));
+		window_writeincr(sout, srs(acc, SHIFT));
 	}
 	PROFILE_FOOTER;
 }
