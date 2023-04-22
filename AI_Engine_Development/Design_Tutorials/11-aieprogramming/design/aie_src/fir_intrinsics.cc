@@ -168,7 +168,10 @@ void Multikernel_32tap_fir_intrinsics_core0<SAMPLES, SHIFT>::filter(
 	v16cint16 data = *(v16cint16*) delay_line;
 	v4cacc48 acc = undef_v4cacc48();
 
-	for (int i = 0; i < SAMPLES / 16; i++) {
+	for (int i = 0; i < SAMPLES / 16; i++) 
+		chess_prepare_for_pipelining
+		chess_loop_range(SAMPLES / 16, SAMPLES / 16)
+	{
 		PARTIALMUL(0, 0);
 		writeincr_v4(cout, acc);
 		PARTIALMUL(4, 1);
@@ -202,7 +205,10 @@ void Multikernel_32tap_fir_intrinsics_core1<SAMPLES, SHIFT>::filter(
 	v16cint16 data = *(v16cint16*) delay_line;
 	v4cacc48 acc = undef_v4cacc48();
 
-	for (int i = 0; i < SAMPLES / 16; i++) {
+	for (int i = 0; i < SAMPLES / 16; i++) 
+		chess_prepare_for_pipelining
+		chess_loop_range(SAMPLES / 16, SAMPLES / 16)
+	{
 		acc = readincr_v4(cin);
 		PARTIALMAC(0, 0);
 		writeincr_v4(cout, acc);
@@ -240,7 +246,10 @@ void Multikernel_32tap_fir_intrinsics_core3<SAMPLES, SHIFT>::filter(
 	v16cint16 data = *(v16cint16*) delay_line;
 	v4cacc48 acc = undef_v4cacc48();
 
-	for (int i = 0; i < SAMPLES / 16; i++) {
+	for (int i = 0; i < SAMPLES / 16; i++) 
+		chess_prepare_for_pipelining
+		chess_loop_range(SAMPLES / 16, SAMPLES / 16)
+	{
 		acc = readincr_v4(cin);
 		PARTIALMAC(0, 0);
 		writeincr_v4(sout, srs(acc, SHIFT));
