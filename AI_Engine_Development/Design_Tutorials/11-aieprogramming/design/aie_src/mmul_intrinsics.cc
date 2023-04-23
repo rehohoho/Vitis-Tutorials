@@ -68,19 +68,22 @@ void vmul_intrinsic_vector(
 }
 
 
+// restrict necessary to remove pointer aliasing dependenncies when loading buf_matA
 template <int VMULM, int VMULN>
 void vmul_intrinsic_vector_2matA(
-  input_window<int16>* matA1, // column-major
-  input_window<int16>* matA2, // column-major
-  input_window<int16>* matB, // single row
-  output_window<int16>* matC
+  input_window<int16>* __restrict matA1, // column-major
+  input_window<int16>* __restrict matA2, // column-major
+  input_window<int16>* __restrict matB, // single row
+  output_window<int16>* __restrict matC
 ) {
 	PROFILE_HEADER;
 
   v16int16 buf_matB = window_read_v16(matB);
 	v16acc48 acc = null_v16acc48(); 
 
-	for (unsigned int i = 0; i < VMULM / 16; i++) { // compute 16 outputs per i
+	for (unsigned int i = 0; i < VMULM / 16; i++) 
+    chess_prepare_for_pipelining
+  { // compute 16 outputs per i
 		acc = null_v16acc48();
 		for(int j = 0; j < 16; j += 2) {
       int incr_num = (j == 14) ? 80 : 64;         // next col block: 64+16 if last iter
