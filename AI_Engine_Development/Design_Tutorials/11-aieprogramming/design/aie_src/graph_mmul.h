@@ -8,6 +8,7 @@
 #define ROW_A_LEN 64
 #define COL_A_LEN 64
 #define COL_B_LEN 64
+#define SHIFT_LEN 0
 #define A_LEN     ROW_A_LEN * COL_A_LEN
 #define B_LEN     COL_A_LEN * COL_B_LEN
 #define C_LEN     ROW_A_LEN * COL_B_LEN
@@ -23,10 +24,10 @@ class MmulAieapiGraph : public adf::graph {
     adf::output_plio plout[1];
 
     MmulAieapiGraph() { 
-      k[0] = adf::kernel::create(mmul_aieapi_shuffleA<ROW_A_LEN, COL_A_LEN, COL_B_LEN, 0>);
-      k[1] = adf::kernel::create(mmul_aieapi_shuffleB<ROW_A_LEN, COL_A_LEN, COL_B_LEN, 0>);
-      k[2] = adf::kernel::create_object<MmulAieapi<ROW_A_LEN, COL_A_LEN, COL_B_LEN, 0>>();
-      k[3] = adf::kernel::create(mmul_aieapi_shuffleC<ROW_A_LEN, COL_A_LEN, COL_B_LEN, 0>);
+      k[0] = adf::kernel::create(mmul_aieapi_shuffleA<ROW_A_LEN, COL_A_LEN, COL_B_LEN, SHIFT_LEN>);
+      k[1] = adf::kernel::create(mmul_aieapi_shuffleB<ROW_A_LEN, COL_A_LEN, COL_B_LEN, SHIFT_LEN>);
+      k[2] = adf::kernel::create_object<MmulAieapi<ROW_A_LEN, COL_A_LEN, COL_B_LEN, SHIFT_LEN>>();
+      k[3] = adf::kernel::create(mmul_aieapi_shuffleC<ROW_A_LEN, COL_A_LEN, COL_B_LEN, SHIFT_LEN>);
       
       for (int i = 0; i < 4; i++)
         adf::source(k[i]) = "mmul.cc";

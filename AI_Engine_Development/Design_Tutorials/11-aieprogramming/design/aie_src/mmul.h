@@ -16,6 +16,10 @@ class MmulAieapi {
 		const int num_rowA = ROWA/M; 
 		const int num_colA = COLA/K;
 		const int num_colB = COLB/N;
+		void filterHelper(
+			const int8_t* __restrict pA,
+			const int8_t* __restrict pB,
+			int8_t* __restrict pC);
 
   public:
 		MmulAieapi() {};
@@ -30,6 +34,34 @@ class MmulAieapi {
     };
 
 };
+
+
+template <int ROWA, int COLA, int COLB, int SHIFT>
+class MmulAieapi2x {
+
+  private:
+		const int num_rowA = ROWA/M; 
+		const int num_colA = COLA/K;
+		const int num_colB = COLB/N;
+		void filterHelper(
+			const int8_t* __restrict pA,
+			const int8_t* __restrict pB,
+			int8_t* __restrict pC);
+
+  public:
+		MmulAieapi2x() {};
+
+    void filter(
+			input_window<int8>* __restrict matA, 
+			input_window<int8>* __restrict matB, 
+			output_window<int8>* __restrict matC);
+    
+    static void registerKernelClass() {
+      REGISTER_FUNCTION(MmulAieapi2x::filter);
+    };
+
+};
+
 
 template <int ROWA, int COLA, int COLB, int SHIFT>
 void mmul_aieapi_shuffleA(

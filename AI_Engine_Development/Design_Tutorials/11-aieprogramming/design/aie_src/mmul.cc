@@ -2,6 +2,7 @@
 #include "kernel_utils.h"
 
 
+// 9201 cycles
 template <int ROWA, int COLA, int COLB, int SHIFT>
 void MmulAieapi<ROWA, COLA, COLB, SHIFT>::filter(
 	input_window<int8> * __restrict matA, // in 4*16 block order (each block as a vector), block placed row order
@@ -47,11 +48,76 @@ void MmulAieapi<ROWA, COLA, COLB, SHIFT>::filter(
 }
 
 
+// 12401 cycles
+template <int ROWA, int COLA, int COLB, int SHIFT>
+void MmulAieapi2x<ROWA, COLA, COLB, SHIFT>::filter(
+	input_window<int8_t> * __restrict matA, // in 4*16 block order (each block as a vector), block placed row order
+	input_window<int8_t> * __restrict matB, // in 16*8 block order (each block as a vector), block placed col order
+	output_window<int8_t> * __restrict matC
+) {  
+  using MMUL = aie::mmul<M, K, N, int8_t, int8_t>;
+  const int8_t* __restrict pA = (int8_t*) matA->ptr;
+  const int8_t* __restrict pB = (int8_t*) matB->ptr;
+  int8_t* __restrict pC = (int8_t*) matC->ptr;
+
+  PROFILE_HEADER;
+  
+  for (unsigned i = 0; i < num_rowA; i+=2) chess_loop_range(2,) { // A's row block #
+    int8_t* __restrict pC1 = pC +       i * num_colB * MMUL::size_C;
+    int8_t* __restrict pC2 = pC + (i + 1) * num_colB * MMUL::size_C;
+    
+    // row offset: i * num_colA * size_A = number of A blocks * size of A blocks (M*K)
+    // each i completes one row of blocks
+    const int8_t * __restrict pA1 = pA + i * num_colA * MMUL::size_A;
+    const int8_t * __restrict pA2 = pA + (i + 1) * num_colA * MMUL::size_A;
+
+    for (unsigned j = 0; j < num_colB; j+=2) chess_loop_range(2,) { // B's col block #
+      // col offset: j * size_B = number of B cols done * size of B blocks (K*M)
+      // each j completes one column of blocks
+			const int8_t * __restrict pB1 = pB + j * MMUL::size_B;
+			const int8_t * __restrict pB2 = pB + (j + 1) * MMUL::size_B;
+
+			// load first instance
+			aie::vector<int8_t, MMUL::size_A> A0 = aie::load_v<MMUL::size_A>(pA1); pA1 += MMUL::size_A;
+			aie::vector<int8_t, MMUL::size_A> A1 = aie::load_v<MMUL::size_A>(pA2); pA2 += MMUL::size_A;
+      aie::vector<int8_t, MMUL::size_B> B0 = aie::load_v<MMUL::size_B>(pB1); pB1 += MMUL::size_B * num_colB;
+      aie::vector<int8_t, MMUL::size_B> B1 = aie::load_v<MMUL::size_B>(pB2); pB2 += MMUL::size_B * num_colB;
+
+      MMUL C00; C00.mul(A0, B0);
+      MMUL C01; C01.mul(A0, B1);
+      MMUL C10; C10.mul(A1, B0);
+      MMUL C11; C11.mul(A1, B1);
+
+      // compute for row of blocks in A and col of blocks in B
+			for (unsigned k = 1; k < num_colA; k++) chess_loop_range(3,) {
+        A0 = aie::load_v<MMUL::size_A>(pA1); pA1 += MMUL::size_A;
+        A1 = aie::load_v<MMUL::size_A>(pA2); pA2 += MMUL::size_A;
+        B0 = aie::load_v<MMUL::size_B>(pB1); pB1 += MMUL::size_B * num_colB;
+        B1 = aie::load_v<MMUL::size_B>(pB2); pB2 += MMUL::size_B * num_colB;
+        C00.mac(A0, B0);
+        C01.mac(A0, B1);
+        C10.mac(A1, B0);
+        C11.mac(A1, B1);
+      }
+
+      aie::store_v(pC1, C00.template to_vector<int8_t>(SHIFT)); pC1 += MMUL::size_C;
+      aie::store_v(pC1, C01.template to_vector<int8_t>(SHIFT)); pC1 += MMUL::size_C;
+      aie::store_v(pC2, C10.template to_vector<int8_t>(SHIFT)); pC2 += MMUL::size_C;
+      aie::store_v(pC2, C11.template to_vector<int8_t>(SHIFT)); pC2 += MMUL::size_C;
+    }
+  }
+  
+  PROFILE_FOOTER;
+}
+
+
 template <int ROWA, int COLA, int COLB, int SHIFT>
 void mmul_aieapi_shuffleA (
 	input_window<int8>* __restrict matA, 
 	output_window<int8>* __restrict matAout
 ) {
+  PROFILE_HEADER;
+
   const int sizeA = M * K;
   auto pV = aie::begin_vector<16>((int8*) matA->ptr);
   auto pOut = aie::begin_vector<sizeA>((int8*) matAout->ptr);
@@ -70,6 +136,8 @@ void mmul_aieapi_shuffleA (
     }
     pV = pV + 12; // next row of blocks: -(4+16)*16 = -64 + 4*64
   }
+
+  PROFILE_FOOTER;
 }
 
 
@@ -78,6 +146,8 @@ void mmul_aieapi_shuffleB (
 	input_window<int8> * __restrict matB, 
 	output_window<int8> * __restrict matBout
 ) {
+  PROFILE_HEADER;
+
   const int sizeA = K * N;
   auto pV = aie::begin_vector<16>((int8*) matB->ptr);
   auto pOut = aie::begin_vector<16>((int8*) matBout->ptr);
@@ -116,6 +186,8 @@ void mmul_aieapi_shuffleB (
     }
     pV += 60; // (-4+64)
   }
+
+  PROFILE_FOOTER;
 }
 
 
@@ -124,6 +196,8 @@ void mmul_aieapi_shuffleC(
 	input_window<int8> * __restrict matC, 
 	output_window<int8> * __restrict matCout
 ) {
+  PROFILE_HEADER;
+
   const int sizeA = M*N;
   auto pV = aie::begin_vector<sizeA>((int8*) matC->ptr);
   auto pOut = aie::begin_vector<sizeA>((int8*) matCout->ptr);
@@ -146,4 +220,6 @@ void mmul_aieapi_shuffleC(
     }
     pOut = pOut + 6;
   }
+
+  PROFILE_FOOTER;
 }
