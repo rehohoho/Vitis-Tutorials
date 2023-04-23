@@ -210,7 +210,7 @@ $(BUILD_TARGET_DIR)/$(DATAMOVER_KERNEL_XO).xo:
 #	Work/ 
 #	xnwOut/
 LIBADF_A 			:= $(BUILD_TARGET_DIR)/libadf.a
-GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph_fir.cpp
+GRAPH_SRC_CPP := $(AIE_SRC_REPO)/graph_mmul.cpp
 
 AIE_FLAGS := -include=$(AIE_SRC_REPO) \
 						 -include=$(AIE_SRC_REPO)/data \
