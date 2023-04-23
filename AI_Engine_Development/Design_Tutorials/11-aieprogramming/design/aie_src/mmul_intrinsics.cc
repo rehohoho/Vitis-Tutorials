@@ -8,6 +8,8 @@ void vmul_intrinsic_scalar(
   input_window<int16>* matB, // single row
   output_window<int16>* matC
 ) {
+  PROFILE_HEADER;
+
   for (int i = 0; i < VMULM; i++) {
     int res = 0;
     for (int j = 0; j < VMULN; j++) {
@@ -19,6 +21,8 @@ void vmul_intrinsic_scalar(
     window_writeincr(matC, (int16_t) res);
     window_incr(matA, 1); // next row
   }
+
+  PROFILE_FOOTER;
 }
 
 
@@ -37,7 +41,9 @@ void vmul_intrinsic_vector(
   input_window<int16>* matB, // single row
   output_window<int16>* matC
 ) {
-	v16int16 buf_matB = window_read_v16(matB);
+	PROFILE_HEADER;
+
+  v16int16 buf_matB = window_read_v16(matB);
 	v16acc48 acc = null_v16acc48(); 
 
 	for (unsigned int i = 0; i < VMULM / 16; i++) { // compute 16 outputs per i
@@ -57,4 +63,6 @@ void vmul_intrinsic_vector(
 		window_writeincr(matC, srs(acc, 0)); // bitshift from acc46 to int16
 		window_incr(matA, 16); // next col block
 	}
+
+  PROFILE_FOOTER;
 }
