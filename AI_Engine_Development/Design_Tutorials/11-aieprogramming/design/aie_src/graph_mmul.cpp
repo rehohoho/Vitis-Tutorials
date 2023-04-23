@@ -19,6 +19,7 @@ limitations under the License. */
 // MmulAieapiGraph mmul_aieapi;
 VmulScalarGraph vmul_scalar;
 VmulVectorGraph vmul_vector;
+Vmul2VectorGraph v2mul_vector;
 
 
 #ifdef __X86SIM__
@@ -34,6 +35,10 @@ int main(int argc, char ** argv) {
   adfCheck(vmul_vector.init(), "init vmul_vector");
   adfCheck(vmul_vector.run(1), "run vmul_vector");
 	adfCheck(vmul_vector.end(), "end vmul_vector");
+
+  adfCheck(v2mul_vector.init(), "init v2mul_vector");
+  adfCheck(v2mul_vector.run(1), "run v2mul_vector");
+	adfCheck(v2mul_vector.end(), "end v2mul_vector");
   return 0;
 }
 #endif
@@ -59,6 +64,12 @@ int main(int argc, char ** argv) {
   get_graph_throughput_by_port(vmul_vector, "plin[0]", vmul_vector.plin[0], VMUL_A_LEN, sizeof(int16), ITER_CNT);
   get_graph_throughput_by_port(vmul_vector, "plout[0]", vmul_vector.plout[0], VMUL_M, sizeof(int16), ITER_CNT);
 	adfCheck(vmul_vector.end(), "end vmul_vector");
+
+  adfCheck(v2mul_vector.init(), "init v2mul_vector");
+  get_graph_latency(v2mul_vector, "plin[0]/plout[0]", v2mul_vector.plin[0], v2mul_vector.plout[0], ITER_CNT);
+  get_graph_throughput_by_port(v2mul_vector, "plin[0]", v2mul_vector.plin[0], VMUL_A_LEN, sizeof(int16), ITER_CNT);
+  get_graph_throughput_by_port(v2mul_vector, "plout[0]", v2mul_vector.plout[0], VMUL_M, sizeof(int16), ITER_CNT);
+	adfCheck(v2mul_vector.end(), "end v2mul_vector");
   return 0;
 }
 #endif

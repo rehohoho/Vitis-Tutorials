@@ -134,4 +134,43 @@ class VmulVectorGraph : public adf::graph {
 
 };
 
+
+class Vmul2VectorGraph : public adf::graph {
+
+  private:
+    adf::kernel k[1];
+
+  public:
+    adf::input_plio plin[3];
+    adf::output_plio plout[1];
+
+    Vmul2VectorGraph() { 
+      k[0] = adf::kernel::create(vmul_intrinsic_vector_2matA<VMUL_M, VMUL_N>);
+      
+      for (int i = 0; i < 1; i++)
+        adf::source(k[i]) = "mmul_intrinsics.cc";
+
+#ifdef EXTERNAL_IO
+      plin[0] = adf::input_plio::create("v2vector_plin0", adf::plio_64_bits);
+      plin[1] = adf::input_plio::create("v2vector_plin1", adf::plio_64_bits);
+      plin[2] = adf::input_plio::create("v2vector_plin2", adf::plio_64_bits);
+      plout[0] = adf::output_plio::create("v2vector_plout0", adf::plio_64_bits);
+#else
+      plin[0] = adf::input_plio::create("v2vector_plin0", adf::plio_64_bits, "vmula_100samples_phase1.txt");
+      plin[1] = adf::input_plio::create("v2vector_plin1", adf::plio_64_bits, "vmula_100samples_phase2.txt");
+      plin[2] = adf::input_plio::create("v2vector_plin2", adf::plio_64_bits, "vmulb_100samples.txt");
+      plout[0] = adf::output_plio::create("v2vector_plout0", adf::plio_64_bits, "vmul_2vector.txt");
+#endif
+      
+      adf::connect<adf::window<VMUL_A_LEN*2/2>> (plin[0].out[0], k[0].in[0]);
+      adf::connect<adf::window<VMUL_A_LEN*2/2>> (plin[1].out[0], k[0].in[1]);
+      adf::connect<adf::window<VMUL_N*2>> (plin[2].out[0], k[0].in[2]);
+      adf::connect<adf::window<VMUL_M*2>> (k[0].out[0], plout[0].in[0]);
+      
+      for (int i = 0; i < 1; i++)
+        adf::runtime<ratio>(k[i]) = 0.6;
+    }
+
+};
+
 #endif // __GRAPH_H__
