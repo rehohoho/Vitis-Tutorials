@@ -53,7 +53,8 @@ void vmul_intrinsic_vector(
       buf_matA = upd_w(buf_matA, 0, window_read_v16(matA));
       window_incr(matA, 64);
       buf_matA = upd_w(buf_matA, 1, window_read_v16(matA));
-      window_incr(matA, 64);
+      int incr_num = (j == 14) ? 80 : 64;         // next col block: 64+16 if last iter
+      window_incr(matA, incr_num);
       
       // multiply by 2 coefficients
       // acc, xbuff, xstart, xoffsets, xoffsets_hi, xsquare, zbuff, zstart, zoffsets, zoffsets_hi, zstep
@@ -61,7 +62,40 @@ void vmul_intrinsic_vector(
       acc = mac16(acc, buf_matA, 0, 0x73727170, 0x77767574, 0x3120, buf_matB, j, 0x0, 0x0, 1);
 		}
 		window_writeincr(matC, srs(acc, 0)); // bitshift from acc46 to int16
-		window_incr(matA, 16); // next col block
+	}
+
+  PROFILE_FOOTER;
+}
+
+
+template <int VMULM, int VMULN>
+void vmul_intrinsic_vector_2matA(
+  input_window<int16>* matA1, // column-major
+  input_window<int16>* matA2, // column-major
+  input_window<int16>* matB, // single row
+  output_window<int16>* matC
+) {
+	PROFILE_HEADER;
+
+  v16int16 buf_matB = window_read_v16(matB);
+	v16acc48 acc = null_v16acc48(); 
+
+	for (unsigned int i = 0; i < VMULM / 16; i++) { // compute 16 outputs per i
+		acc = null_v16acc48();
+		for(int j = 0; j < 16; j += 2) {
+      int incr_num = (j == 14) ? 80 : 64;         // next col block: 64+16 if last iter
+      v32int16 buf_matA = undef_v32int16();       // read 2 rows of matA for this col block
+      buf_matA = upd_w(buf_matA, 0, window_read_v16(matA1));
+      window_incr(matA1, incr_num);
+      buf_matA = upd_w(buf_matA, 1, window_read_v16(matA2));
+      window_incr(matA2, incr_num);
+      
+      // multiply by 2 coefficients
+      // acc, xbuff, xstart, xoffsets, xoffsets_hi, xsquare, zbuff, zstart, zoffsets, zoffsets_hi, zstep
+      // xoffsets: 4b offset for lane 0,2,4,6, for 70, off0=2*0, off2=(7+0+1)*2
+      acc = mac16(acc, buf_matA, 0, 0x73727170, 0x77767574, 0x3120, buf_matB, j, 0x0, 0x0, 1);
+		}
+		window_writeincr(matC, srs(acc, 0)); // bitshift from acc46 to int16
 	}
 
   PROFILE_FOOTER;
