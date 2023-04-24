@@ -103,3 +103,31 @@ void vmul_intrinsic_vector_2matA(
 
   PROFILE_FOOTER;
 }
+
+
+template <int VMULM, int VMULK, int VMULN>
+void mmul_intrinsic_scalar(
+  input_window<int16>* matA, // column-major
+  input_window<int16>* matB, // column-major
+  output_window<int16>* matC // column-major
+) {
+  PROFILE_HEADER;
+
+  for (int i = 0; i < VMULM; i++) {
+    for (int j = 0; j < VMULN; j++) {
+      int res = 0;
+      for (int k = 0; k < VMULK; k++) {
+        int16 a = window_read(matA);
+        int16 b = window_readincr(matB);
+        res += a * b; // matB is a circular buffer
+        window_incr(matA, VMULM);
+      }    
+      window_write(matC, (int16_t) res);
+      window_incr(matC, VMULM);
+    }
+    window_incr(matA, 1); // next row
+    window_incr(matC, 1); // next row
+  }
+
+  PROFILE_FOOTER;
+}
