@@ -131,3 +131,81 @@ void mmul_intrinsic_scalar(
 
   PROFILE_FOOTER;
 }
+
+
+/*
+C[0:15,0] += A[0:15,0:1] * B[0:1,0]
+C[0:15,1] += A[0:15,0:1] * B[0:1,1]
+...
+C[0:15,0] += A[0:15,6:7] * B[6:7,0]
+C[0:15,1] += A[0:15,6:7] * B[6:7,1]
+
+114 cycles without interleaving and preloading: read + matA twice, mac16 twice, repeat
+71 cycles with interleaving and preloading: mac16+read, mac16+read, repeat
+*/
+template <int VMULM, int VMULK, int VMULN>
+void mmul_intrinsic_vector(
+  input_window<int16>* matA, // column-major: K x M
+  input_window<int16>* matB, // column-major: N x K
+  output_window<int16>* matC // column-major:    N x M
+) {
+	PROFILE_HEADER;
+
+  v64int16 buf_matA = undef_v64int16();
+  v16int16 buf_matB = window_read_v16(matB);
+
+  // preload first bit
+  buf_matA=upd_w(buf_matA,0,window_read_v16(matA));
+  window_incr(matA,64);
+  buf_matA=upd_w(buf_matA,1,window_read_v16(matA));
+  window_incr(matA,64);
+
+	for (unsigned int i = 0; i < VMULM / 16; i++) 
+    chess_prepare_for_pipelining
+    chess_loop_range(4,)
+  { // compute 16 outputs per i
+  	v16acc48 acc0 = null_v16acc48();  // C[:,+0] = A[:,+0:+1] * B[:,+0]
+  	v16acc48 acc1 = null_v16acc48();  // C[:,+1] = A[:,+0:+1] * B[:,+1]
+		
+    // C[:,+0] = A[i+0:i+1, M] * B[N:,i+0:i+1]
+    // C[:,+1] = A[i+0:i+1, M] * B[N:,i+8:i+9]
+    // interleave loads for next 2 mac16s
+    acc0 = mac16(acc0,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,0,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,2,window_read_v16(matA));
+    window_incr(matA,64);
+    acc1 = mac16(acc1,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,8,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,3,window_read_v16(matA));
+    window_incr(matA,64);
+    
+    
+    acc0 = mac16(acc0,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,2,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,0,window_read_v16(matA));
+    window_incr(matA,64);
+    acc1 = mac16(acc1,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,10,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,1,window_read_v16(matA));
+    window_incr(matA,64);
+    
+    
+    acc0 = mac16(acc0,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,4,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,2,window_read_v16(matA));
+    window_incr(matA,64);
+    acc1 = mac16(acc1,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,12,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,3,window_read_v16(matA));
+    window_incr(matA,80); // next column chunk
+
+    // interleave writes as well
+    acc0 = mac16(acc0,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,6,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,0,window_read_v16(matA));
+    window_incr(matA,64);  
+    window_write(matC,srs(acc0,0));
+    window_incr(matC,64); // row-major conversion
+
+    acc1 = mac16(acc1,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,14,0x0,0x0,1);
+    buf_matA=upd_w(buf_matA,1,window_read_v16(matA));
+    window_incr(matA,64);
+    window_write(matC,srs(acc1,0));
+    window_incr(matC,80); // next column chunk
+	}
+
+  PROFILE_FOOTER;
+}

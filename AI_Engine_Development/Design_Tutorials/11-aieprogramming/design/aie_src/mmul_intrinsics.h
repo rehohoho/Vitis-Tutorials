@@ -30,4 +30,10 @@ void mmul_intrinsic_scalar(
   input_window<int16>* matB,  // single-row
   output_window<int16>* matC);
 
+template <int VMULM, int VMULK, int VMULN>
+void mmul_intrinsic_vector(
+	input_window<int16>* matA,  // column-major
+  input_window<int16>* matB,  // single row
+  output_window<int16>* matC);
+
 #endif // MMUL_INTRINSICS_H_
