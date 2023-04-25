@@ -35,6 +35,12 @@ def int8_tobytes(data: List[int]):
 def int8_fstr(payload_len_in_bytes: int):
   return "<"+str(payload_len_in_bytes//1)+"b" 
 
+def int16_tobytes(data: List[int]):
+  return np.real(data).astype(np.int16).tolist()
+
+def int16_fstr(payload_len_in_bytes: int):
+  return "<"+str(payload_len_in_bytes//2)+"h"
+
 def int32_tobytes(data: List[int]):
   return np.real(data).astype(np.int32).tolist()
 
@@ -44,6 +50,8 @@ def int32_fstr(payload_len_in_bytes: int):
 def get_format_to_bytes_callable(dtype: str):
   if dtype == "int32":
     return int32_tobytes
+  elif dtype == "int16":
+    return int16_tobytes
   elif dtype == "int8":
     return int8_tobytes
   elif dtype == "cint16":
@@ -54,6 +62,8 @@ def get_format_to_bytes_callable(dtype: str):
 def get_format_string_callable_send(dtype: str):
   if dtype == "int32":
     return int32_fstr
+  elif dtype == "int16":
+    return int16_fstr
   elif dtype == "int8":
     return int8_fstr
   elif dtype == "cint16":
@@ -64,6 +74,8 @@ def get_format_string_callable_send(dtype: str):
 def get_format_string_callable_recv(dtype: str):
   if dtype == "int32":
     return int32_fstr
+  elif dtype == "int16":
+    return int16_fstr
   elif dtype == "int8":
     return int8_fstr
   elif dtype == "cint16":
@@ -208,39 +220,76 @@ if __name__ == "__main__":
   logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
   master_list = [
+    # mul
     # ("smul_plin1", f"{args.input_dir}/va_10samples.txt", 64, "int32"),
     # ("smul_plin2", f"{args.input_dir}/vb_10samples.txt", 64, "int32"),
     # ("vmul_plin1", f"{args.input_dir}/va_10samples.txt", 64, "int32"),
     # ("vmul_plin2", f"{args.input_dir}/vb_10samples.txt", 64, "int32"),
+    
+    # fir
     # ("sfir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("vfir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mfir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mfir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mfir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mfir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("vifir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mifir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mifir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mifir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("mifir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("x4fir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("x4fir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("x4fir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
-    ("x4fir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("vfir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mfir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mfir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mfir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mfir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("vifir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mifir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mifir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mifir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("mifir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("x4fir_plin0", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("x4fir_plin1", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("x4fir_plin2", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+    # ("x4fir_plin3", f"{args.input_dir}/fir_100samples.txt", 64, "cint16"),
+
+    # mmul aieapi
+    ("mmul_plin0", f"{args.input_dir}/mmul_100samples_rand.txt", 64, "int8"),
+    ("mmul_plin1", f"{args.input_dir}/mmul_100samples_rand.txt", 64, "int8"),
+
+    # vmul intrinsic
+    ("vscalar_plin0", f"{args.input_dir}/vmula_100samples.txt", 64, "int16"),
+    ("vscalar_plin1", f"{args.input_dir}/vmulb_100samples.txt", 64, "int16"),
+    ("vvector_plin0", f"{args.input_dir}/vmula_100samples.txt", 64, "int16"),
+    ("vvector_plin1", f"{args.input_dir}/vmulb_100samples.txt", 64, "int16"),
+    ("v2vector_plin0", f"{args.input_dir}/vmula_100samples_phase1.txt", 64, "int16"),
+    ("v2vector_plin1", f"{args.input_dir}/vmula_100samples_phase2.txt", 64, "int16"),
+    ("v2vector_plin2", f"{args.input_dir}/vmulb_100samples.txt", 64, "int16"),
+    
+    # mmul intrinsic
+    ("mscalar_plin0", f"{args.input_dir}/mmula_100samples_rand.txt", 64, "int16"),
+    ("mscalar_plin1", f"{args.input_dir}/mmulb_100samples_rand.txt", 64, "int16"),
+    ("mvector_plin0", f"{args.input_dir}/mmula_100samples_rand.txt", 64, "int16"),
+    ("mvector_plin1", f"{args.input_dir}/mmulb_100samples_rand.txt", 64, "int16"),
   ]
 
   slave_list = [
+    # mul
     # ("smul_plout1", f"{args.output_dir}/scalar_mul.txt", 64, "int32", 512), 
     # ("vmul_plout1", f"{args.output_dir}/vector_mul.txt", 64, "int32", 512), 
+    
+    # fir
     # ("sfir_plout1", f"{args.output_dir}/sfir.txt", 64, "cint16", 64),
-    ("vfir_plout0", f"{args.output_dir}/vfir.txt", 64, "cint16", 64),
-    ("mfir_plout0", f"{args.output_dir}/mfir.txt", 64, "cint16", 64),
-    ("vifir_plout0", f"{args.output_dir}/vifir.txt", 64, "cint16", 64),
-    ("mifir_plout0", f"{args.output_dir}/mifir.txt", 64, "cint16", 64),
-    ("x4fir_plout0", f"{args.output_dir}/x4fir_0.txt", 64, "cint16", 64),
-    ("x4fir_plout1", f"{args.output_dir}/x4fir_1.txt", 64, "cint16", 64),
-    ("x4fir_plout2", f"{args.output_dir}/x4fir_2.txt", 64, "cint16", 64),
-    ("x4fir_plout3", f"{args.output_dir}/x4fir_3.txt", 64, "cint16", 64),
+    # ("vfir_plout0", f"{args.output_dir}/vfir.txt", 64, "cint16", 64),
+    # ("mfir_plout0", f"{args.output_dir}/mfir.txt", 64, "cint16", 64),
+    # ("vifir_plout0", f"{args.output_dir}/vifir.txt", 64, "cint16", 64),
+    # ("mifir_plout0", f"{args.output_dir}/mifir.txt", 64, "cint16", 64),
+    # ("x4fir_plout0", f"{args.output_dir}/x4fir_0.txt", 64, "cint16", 64),
+    # ("x4fir_plout1", f"{args.output_dir}/x4fir_1.txt", 64, "cint16", 64),
+    # ("x4fir_plout2", f"{args.output_dir}/x4fir_2.txt", 64, "cint16", 64),
+    # ("x4fir_plout3", f"{args.output_dir}/x4fir_3.txt", 64, "cint16", 64),
+
+    # mmul aieapi
+    ("mmul_plout0", f"{args.output_dir}/mmul_aieapi.txt", 64, "int8", 4096),
+
+    # vmul intrinsic
+    ("vscalar_plout0", f"{args.output_dir}/vmul_scalar.txt", 64, "int16", 64),
+    ("vvector_plout0", f"{args.output_dir}/vmul_vector.txt", 64, "int16", 64),
+    ("v2vector_plout0", f"{args.output_dir}/vmul_2vector.txt", 64, "int16", 64),
+    
+    # mmul_intrinsic
+    ("mscalar_plout0", f"{args.output_dir}/mmul_scalar.txt", 64, "int16", 128),
+    ("mvector_plout0", f"{args.output_dir}/mmul_vector.txt", 64, "int16", 128),
   ]
   
   design = ExternalTraffic(master_list, slave_list)
