@@ -46,14 +46,14 @@ void vmul_intrinsic_vector(
   v16int16 buf_matB = window_read_v16(matB);
 	v16acc48 acc = null_v16acc48(); 
 
-	for (unsigned int i = 0; i < VMULM / 16; i++) { // compute 16 outputs per i
+	for (unsigned int i = 0; i < VMULM / VMULN; i++) {    // compute 16 outputs per i
 		acc = null_v16acc48();
-		for(int j = 0; j < 16; j += 2) {
-      v32int16 buf_matA = undef_v32int16();       // read 2 rows of matA for this col block
+		for (int j = 0; j < VMULN; j += 2) {
+      v32int16 buf_matA = undef_v32int16();             // read 2 rows of matA for this col block
       buf_matA = upd_w(buf_matA, 0, window_read_v16(matA));
       window_incr(matA, 64);
       buf_matA = upd_w(buf_matA, 1, window_read_v16(matA));
-      int incr_num = (j == 14) ? 80 : 64;         // next col block: 64+16 if last iter
+      int incr_num = (j == VMULN-2) ? VMULM+16 : VMULM;  // next col block: 64+16 if last iter
       window_incr(matA, incr_num);
       
       // multiply by 2 coefficients
@@ -81,13 +81,13 @@ void vmul_intrinsic_vector_2matA(
   v16int16 buf_matB = window_read_v16(matB);
 	v16acc48 acc = null_v16acc48(); 
 
-	for (unsigned int i = 0; i < VMULM / 16; i++) 
+	for (unsigned int i = 0; i < VMULM / VMULN; i++) 
     chess_prepare_for_pipelining
   { // compute 16 outputs per i
 		acc = null_v16acc48();
-		for(int j = 0; j < 16; j += 2) {
-      int incr_num = (j == 14) ? 80 : 64;         // next col block: 64+16 if last iter
-      v32int16 buf_matA = undef_v32int16();       // read 2 rows of matA for this col block
+		for (int j = 0; j < VMULN; j+=2) {
+      int incr_num = (j == VMULN-2) ? VMULM+16 : VMULM; // next col block: 64+16 if last iter
+      v32int16 buf_matA = undef_v32int16();             // read 2 rows of matA for this col block
       buf_matA = upd_w(buf_matA, 0, window_read_v16(matA1));
       window_incr(matA1, incr_num);
       buf_matA = upd_w(buf_matA, 1, window_read_v16(matA2));
@@ -105,7 +105,7 @@ void vmul_intrinsic_vector_2matA(
 }
 
 
-template <int VMULM, int VMULK, int VMULN>
+template <int MMULM, int MMULK, int MMULN>
 void mmul_intrinsic_scalar(
   input_window<int16>* matA, // column-major
   input_window<int16>* matB, // column-major
@@ -113,17 +113,17 @@ void mmul_intrinsic_scalar(
 ) {
   PROFILE_HEADER;
 
-  for (int i = 0; i < VMULM; i++) {
-    for (int j = 0; j < VMULN; j++) {
+  for (int i = 0; i < MMULM; i++) {
+    for (int j = 0; j < MMULN; j++) {
       int res = 0;
-      for (int k = 0; k < VMULK; k++) {
+      for (int k = 0; k < MMULK; k++) {
         int16 a = window_read(matA);
         int16 b = window_readincr(matB);
         res += a * b; // matB is a circular buffer
-        window_incr(matA, VMULM);
+        window_incr(matA, MMULM);
       }    
-      window_write(matC, (int16_t) res);
-      window_incr(matC, VMULM);
+      window_write(matC, (int16) res);
+      window_incr(matC, MMULM);
     }
     window_incr(matA, 1); // next row
     window_incr(matC, 1); // next row
@@ -143,11 +143,11 @@ C[0:15,1] += A[0:15,6:7] * B[6:7,1]
 114 cycles without interleaving and preloading: read + matA twice, mac16 twice, repeat
 71 cycles with interleaving and preloading: mac16+read, mac16+read, repeat
 */
-template <int VMULM, int VMULK, int VMULN>
+template <int MMULM, int MMULK, int MMULN>
 void mmul_intrinsic_vector(
   input_window<int16>* matA, // column-major: K x M
   input_window<int16>* matB, // column-major: N x K
-  output_window<int16>* matC // column-major:    N x M
+  output_window<int16>* matC // column-major: N x M
 ) {
 	PROFILE_HEADER;
 
@@ -156,11 +156,11 @@ void mmul_intrinsic_vector(
 
   // preload first bit
   buf_matA=upd_w(buf_matA,0,window_read_v16(matA));
-  window_incr(matA,64);
+  window_incr(matA,MMULM);
   buf_matA=upd_w(buf_matA,1,window_read_v16(matA));
-  window_incr(matA,64);
+  window_incr(matA,MMULM);
 
-	for (unsigned int i = 0; i < VMULM / 16; i++) 
+	for (unsigned int i = 0; i < MMULM / 16; i++) 
     chess_prepare_for_pipelining
     chess_loop_range(4,)
   { // compute 16 outputs per i
@@ -172,39 +172,39 @@ void mmul_intrinsic_vector(
     // interleave loads for next 2 mac16s
     acc0 = mac16(acc0,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,0,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,2,window_read_v16(matA));
-    window_incr(matA,64);
+    window_incr(matA,MMULM);
     acc1 = mac16(acc1,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,8,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,3,window_read_v16(matA));
-    window_incr(matA,64);
+    window_incr(matA,MMULM);
     
     
     acc0 = mac16(acc0,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,2,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,0,window_read_v16(matA));
-    window_incr(matA,64);
+    window_incr(matA,MMULM);
     acc1 = mac16(acc1,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,10,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,1,window_read_v16(matA));
-    window_incr(matA,64);
+    window_incr(matA,MMULM);
     
     
     acc0 = mac16(acc0,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,4,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,2,window_read_v16(matA));
-    window_incr(matA,64);
+    window_incr(matA,MMULM);
     acc1 = mac16(acc1,buf_matA,0,0x73727170,0x77767574,0x3120,buf_matB,12,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,3,window_read_v16(matA));
-    window_incr(matA,80); // next column chunk
+    window_incr(matA,MMULM+16); // next column chunk
 
     // interleave writes as well
     acc0 = mac16(acc0,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,6,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,0,window_read_v16(matA));
-    window_incr(matA,64);  
+    window_incr(matA,MMULM);  
     window_write(matC,srs(acc0,0));
-    window_incr(matC,64); // row-major conversion
+    window_incr(matC,MMULM); // row-major conversion
 
     acc1 = mac16(acc1,buf_matA,32,0x73727170,0x77767574,0x3120,buf_matB,14,0x0,0x0,1);
     buf_matA=upd_w(buf_matA,1,window_read_v16(matA));
-    window_incr(matA,64);
+    window_incr(matA,MMULM);
     window_write(matC,srs(acc1,0));
-    window_incr(matC,80); // next column chunk
+    window_incr(matC,MMULM+16); // next column chunk
 	}
 
   PROFILE_FOOTER;

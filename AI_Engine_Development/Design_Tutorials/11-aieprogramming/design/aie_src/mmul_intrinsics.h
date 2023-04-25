@@ -24,16 +24,16 @@ void vmul_intrinsic_vector_2matA(
   input_window<int16>* matB,  // single row
   output_window<int16>* matC);
 
-template <int VMULM, int VMULK, int VMULN>
+template <int MMULM, int MMULK, int MMULN>
 void mmul_intrinsic_scalar(
-	input_window<int16>* matA,  // column-major
-  input_window<int16>* matB,  // single-row
-  output_window<int16>* matC);
+	input_window<int16>* matA,    // column-major
+  input_window<int16>* matB,    // column-major
+  output_window<int16>* matC);  // column-major
 
-template <int VMULM, int VMULK, int VMULN>
+template <int MMULM, int MMULK, int MMULN>
 void mmul_intrinsic_vector(
-	input_window<int16>* matA,  // column-major
-  input_window<int16>* matB,  // single row
-  output_window<int16>* matC);
+	input_window<int16>* matA,    // column-major
+  input_window<int16>* matB,    // column-major
+  output_window<int16>* matC);  // column-major
 
 #endif // MMUL_INTRINSICS_H_
