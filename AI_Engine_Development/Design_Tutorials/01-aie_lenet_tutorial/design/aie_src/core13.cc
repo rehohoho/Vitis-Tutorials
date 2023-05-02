@@ -16,6 +16,7 @@ limitations under the License. */
 #include <stdio.h>
 
 #include "core13.h"
+#include "kernel_utils.h"
 
 #ifndef INLINE
 INLINE_DECL void core13(
@@ -32,6 +33,9 @@ INLINE_DECL void core13(
         int8_t* C_out2,
         int shift
 ) {      
+	printf("Running core03\n");
+  PROFILE_HEADER;
+
   int8_t* ptrA = A_in;//+(4*G*H);
   int8_t* ptrC1 = C_out1;
   int8_t* ptrC2 = C_out2;//ptrC1 + (E * F);
@@ -82,6 +86,8 @@ INLINE_DECL void core13(
       }
     }
   }
+	
+  PROFILE_FOOTER;
 }
 #endif
 

@@ -17,6 +17,7 @@ limitations under the License. */
 #include "aie_api/aie.hpp"
 
 #include "core02.h"
+#include "kernel_utils.h"
 
 
 void core02(
@@ -27,6 +28,9 @@ void core02(
 	int8_t* C_out,
 	int shift
 ) {      
+	printf("Running core02\n");
+  PROFILE_HEADER;
+
 	//********** Matrix dimensions********/
 	constexpr size_t sizeTileA = 4 * 8;
 	constexpr size_t sizeTileB = 8 * 4;
@@ -79,6 +83,7 @@ void core02(
 	
 	}
 
+	PROFILE_FOOTER;
 }
 
 void core02_top(input_window_int32 *inA, output_window_int32 *out){

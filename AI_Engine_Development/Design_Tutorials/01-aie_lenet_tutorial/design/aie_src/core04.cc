@@ -18,6 +18,7 @@ limitations under the License. */
 #include "aie_api/aie.hpp"
 
 #include "core04.h"
+#include "kernel_utils.h"
 
 int8_t A_04[ROW_A_4 * COL_A_4];
 
@@ -30,6 +31,9 @@ void core04(
 	int8_t* C_out,
 	int shift
 ) {      
+	printf("Running core04\n");
+  PROFILE_HEADER;
+
 	// Populate contents of matrix A with contents of A1_in and A2_in
 	int c,k1,k2;
 	int tileY_A = 4;
@@ -107,6 +111,7 @@ void core04(
 		}
 	
 	}
+	PROFILE_FOOTER;
 }
 
 void core04_top(input_window_int32 *inA1, input_window_int32 *inA2, output_window_int32 *out){

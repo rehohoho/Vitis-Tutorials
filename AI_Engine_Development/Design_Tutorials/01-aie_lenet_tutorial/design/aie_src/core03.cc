@@ -17,6 +17,7 @@ limitations under the License. */
 #include "aie_api/aie.hpp"
 
 #include "core03.h"
+#include "kernel_utils.h"
 
 
 void core03(
@@ -29,6 +30,8 @@ void core03(
 	int8_t* C_out,
 	int shift
 ) {      
+	printf("Running core03\n");
+  PROFILE_HEADER;
 
 	//**********Sub-Matrix dimensions********/
 	constexpr size_t sizeTileA = 4 * 8;
@@ -96,6 +99,8 @@ void core03(
 		}
 		ptrC_relu += tileX_C * (tileY_C - 1);
 	}
+
+	PROFILE_FOOTER;
 }
 
 void core03_top(input_window_int32 *inA, 
